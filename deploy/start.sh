@@ -4,6 +4,7 @@
 # app itself (python-dotenv); it is never sourced as shell, so values may
 # contain spaces or special characters.
 set -euo pipefail
+export PYTHONWARNINGS=ignore
 cd /opt/xtb-stocks-bot
 if grep -qE '^[[:space:]]*DISCORD_BOT_TOKEN[[:space:]]*=[[:space:]]*["'"'"']?[^"'"'"'[:space:]#]' .env 2>/dev/null; then
   exec .venv/bin/python -m stockbot discord

@@ -69,16 +69,37 @@ class AIClient:
         return None
 
 
+# Tried in order after the configured model. Google retires names and some stall; the first one that
+# answers becomes the active model for the rest of the process.
+FALLBACK_MODELS = ("gemini-3-flash-preview", "gemini-flash-lite-latest", "gemini-3.1-flash-lite-preview",
+                   "gemini-flash-latest", "gemini-2.5-flash")
+
+
 class GeminiClient(AIClient):
     name = "Google Gemini"
     enabled = True
+
+    def _candidates(self):  # noqa: ANN202
+        self._tried: list[str] = []
+        self._extra: list[str] = []
+        seen: set[str] = set()
+        order = [self.model, *FALLBACK_MODELS]
+        i = 0
+        while i < len(order) or self._extra:
+            m = order[i] if i < len(order) else self._extra.pop(0)
+            i += 1
+            if m in seen:
+                continue
+            seen.add(m)
+            self._tried.append(m)
+            yield m  # type: ignore[misc]
 
     def __init__(self, api_key: str, model: str, db: Database, daily_limit: int = 200) -> None:
         from google import genai
 
         from google.genai import types as _t
 
-        self.client = genai.Client(api_key=api_key, http_options=_t.HttpOptions(timeout=90_000))  # ms
+        self.client = genai.Client(api_key=api_key, http_options=_t.HttpOptions(timeout=45_000))  # ms per attempt
         self.model = model
         self.db = db
         self.daily_limit = daily_limit
@@ -97,25 +118,35 @@ class GeminiClient(AIClient):
         ok = False
         t0 = time.time()
         try:
-            for attempt in range(2):
+            resp = None
+            last_exc: Exception | None = None
+            for model in self._candidates():
                 try:
                     resp = self.client.models.generate_content(
-                        model=self.model, contents=prompt,
+                        model=model, contents=prompt,
                         config=types.GenerateContentConfig(
                             system_instruction=SYSTEM.format(language=lang),
                             response_mime_type="application/json", response_schema=schema, temperature=0.3,
                         ),
                     )
+                    if model != self.model:
+                        log.warning("Gemini model %s unavailable; now using %s (set GEMINI_MODEL=%s to silence this)", self.model, model, model)
+                        self.model = model
                     break
                 except Exception as exc:  # noqa: BLE001
-                    # Google retires model names and states the replacement in the 404 message:
-                    # "... no longer available ... use models/gemini-X-flash ...". Switch once and retry.
-                    m = re.search(r"use models/([A-Za-z0-9.\-]+)", str(exc))
-                    if attempt == 0 and "NOT_FOUND" in str(exc) and m and m.group(1) != self.model:
-                        log.warning("Gemini model %s unavailable; switching to %s (set GEMINI_MODEL to silence this)", self.model, m.group(1))
-                        self.model = m.group(1)
+                    last_exc = exc
+                    msg = str(exc)
+                    # Google retires names (404 "... use models/X ...") and some models stall server-side (504
+                    # DEADLINE_EXCEEDED) or are overloaded (503/429). Any of these: try the next candidate.
+                    if any(k in msg for k in ("NOT_FOUND", "DEADLINE_EXCEEDED", "UNAVAILABLE", "RESOURCE_EXHAUSTED", "503", "504", "429")):
+                        log.warning("Gemini %s failed after %.1fs (%s); trying next model", model, time.time() - t0, msg[:120])
+                        m = re.search(r"use models/([A-Za-z0-9.\-]+)", msg)
+                        if m and m.group(1) not in self._tried:
+                            self._extra.append(m.group(1))
                         continue
                     raise
+            if resp is None:
+                raise last_exc or RuntimeError("no Gemini model available")
             parsed = getattr(resp, "parsed", None)
             if parsed is None and getattr(resp, "text", None):
                 parsed = schema.model_validate_json(resp.text)

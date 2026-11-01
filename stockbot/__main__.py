@@ -50,7 +50,8 @@ def _logging(log_file) -> None:  # noqa: ANN001
         logging.getLogger(noisy).setLevel(logging.WARNING)
     import warnings
 
-    warnings.filterwarnings("ignore", module="yfinance")      # pandas deprecation noise from yfinance internals
+    warnings.simplefilter("ignore")                            # pandas/yfinance deprecation noise in the service log
+    warnings.filterwarnings("ignore", module="yfinance")
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     warnings.filterwarnings("ignore", category=FutureWarning)
 
