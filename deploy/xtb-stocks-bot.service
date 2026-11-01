@@ -1,0 +1,23 @@
+[Unit]
+Description=XTB stocks brief bot (Discord)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=stocksbot
+WorkingDirectory=/opt/xtb-stocks-bot
+EnvironmentFile=/opt/xtb-stocks-bot/.env
+ExecStart=/opt/xtb-stocks-bot/.venv/bin/python -m stockbot run
+Restart=always
+RestartSec=30
+KillSignal=SIGTERM
+TimeoutStopSec=60
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xtb-stocks-bot/state /opt/xtb-stocks-bot/bot.log
+
+[Install]
+WantedBy=multi-user.target

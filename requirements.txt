@@ -1,0 +1,6 @@
+anthropic>=1.5,<2
+yfinance>=0.2.50
+pydantic>=2.7
+python-dotenv>=1.0
+pytest>=8
+tzdata>=2024.1
