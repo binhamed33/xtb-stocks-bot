@@ -57,7 +57,7 @@ def main(argv: list[str]) -> int:
         print(f"next close  : {nxt[1].astimezone(s.user_tz):%A %Y-%m-%d %H:%M}  ({nxt[1]:%H:%M} ET)")
         print(f"universe    : {len(s.universe)} tickers")
         print(f"discord     : {'configured' if discord.enabled else 'NOT configured'}")
-        print(f"claude key  : {'present' if os.environ.get('ANTHROPIC_API_KEY') else 'MISSING'}")
+        print(f"claude key  : {'present (AI analysis)' if os.environ.get('ANTHROPIC_API_KEY') else 'missing -> rule-based picks'}")
         return 0
 
     if cmd == "test-discord":
@@ -76,11 +76,15 @@ def main(argv: list[str]) -> int:
     if not discord.enabled:
         print("config error: DISCORD_WEBHOOK_URL is required", file=sys.stderr)
         return 2
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("config error: ANTHROPIC_API_KEY is required", file=sys.stderr)
-        return 2
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        analyst = Analyst(s)
+    else:
+        from .rules import RulesAnalyst
 
-    bot = StocksBot(s, discord, Analyst(s), state)
+        log.warning("ANTHROPIC_API_KEY not set: using rule-based picks (no AI analysis)")
+        analyst = RulesAnalyst(s.max_buy_picks, s.max_avoid_picks, s.holdings)
+
+    bot = StocksBot(s, discord, analyst, state)
     if cmd == "now":
         bot.brief_now()
         return 0
