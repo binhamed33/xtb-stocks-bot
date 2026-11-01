@@ -177,7 +177,7 @@ def load_settings() -> Settings:
         discord_guild_id=int(guild) if guild and guild.isdigit() else None,
         admin_user_ids=admins,
         gemini_api_key=_env("GEMINI_API_KEY"),
-        gemini_model=_env("GEMINI_MODEL", "gemini-2.5-flash") or "gemini-2.5-flash",
+        gemini_model=_env("GEMINI_MODEL", "gemini-3.8-flash") or "gemini-3.8-flash",
         gemini_daily_call_limit=max(1, _int("GEMINI_DAILY_CALL_LIMIT", 200)),
         fmp_api_key=_env("FMP_API_KEY"),
         finnhub_api_key=_env("FINNHUB_API_KEY"),

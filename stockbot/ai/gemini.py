@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, Type, TypeVar
 
 from pydantic import BaseModel, Field
@@ -92,13 +93,25 @@ class GeminiClient(AIClient):
         prompt = f"TASK: {task}\n\nDATA (JSON, with sources):\n{json.dumps(payload, ensure_ascii=False, default=str)[:60000]}"
         ok = False
         try:
-            resp = self.client.models.generate_content(
-                model=self.model, contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM.format(language=lang),
-                    response_mime_type="application/json", response_schema=schema, temperature=0.3,
-                ),
-            )
+            for attempt in range(2):
+                try:
+                    resp = self.client.models.generate_content(
+                        model=self.model, contents=prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM.format(language=lang),
+                            response_mime_type="application/json", response_schema=schema, temperature=0.3,
+                        ),
+                    )
+                    break
+                except Exception as exc:  # noqa: BLE001
+                    # Google retires model names and states the replacement in the 404 message:
+                    # "... no longer available ... use models/gemini-X-flash ...". Switch once and retry.
+                    m = re.search(r"use models/([A-Za-z0-9.\-]+)", str(exc))
+                    if attempt == 0 and "NOT_FOUND" in str(exc) and m and m.group(1) != self.model:
+                        log.warning("Gemini model %s unavailable; switching to %s (set GEMINI_MODEL to silence this)", self.model, m.group(1))
+                        self.model = m.group(1)
+                        continue
+                    raise
             parsed = getattr(resp, "parsed", None)
             if parsed is None and getattr(resp, "text", None):
                 parsed = schema.model_validate_json(resp.text)
