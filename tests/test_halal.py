@@ -6,14 +6,15 @@ def test_business_screen():
     assert screen("DIS", "Communication Services", "Entertainment", 1e11, 1e9, 1e9).status == "fail"
     assert screen("BUD", "Consumer Defensive", "Beverages - Brewers", 1e11, 1e9, 1e9).status == "fail"
     assert screen("LMT", "Industrials", "Aerospace & Defense", 1e11, 1e9, 1e9).status == "fail"
-    assert screen("EA", "Communication Services", "Electronic Gaming & Multimedia", 1e11, 1e9, 1e9).status == "pass"
+    # video games are flagged for review (QUESTIONABLE) by the new engine -> legacy 'unknown'
+    assert screen("EA", "Communication Services", "Electronic Gaming & Multimedia", 1e11, 1e9, 1e9).status == "unknown"
 
 
 def test_financial_ratios():
     ok = screen("AAPL", "Technology", "Consumer Electronics", 3e12, 100e9, 60e9)
     assert ok.status == "pass" and ok.debt_ratio < 0.05 and "✅" in ok.label()
-    assert "الدين" in screen("X", "Industrials", "Airlines", 60e9, 40e9, 1e9).reasons[0]
-    assert "النقد" in screen("Y", "Technology", "Software", 100e9, 1e9, 50e9).reasons[0]
+    assert "debt" in screen("X", "Industrials", "Airlines", 60e9, 40e9, 1e9).reasons[0]
+    assert "cash" in screen("Y", "Technology", "Software", 100e9, 1e9, 50e9).reasons[0]
 
 
 def test_unknown_when_data_missing_and_overrides():
