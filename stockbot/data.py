@@ -19,6 +19,7 @@ class StockSnapshot:
     ticker: str
     name: str = ""
     sector: str = ""
+    industry: str = ""
     price: float = 0.0
     prev_close: float = 0.0
     change_1d_pct: float | None = None
@@ -42,10 +43,14 @@ class StockSnapshot:
     dividend_yield_pct: float | None = None
     earnings_date: str | None = None
     days_to_earnings: int | None = None
+    total_debt: float | None = None
+    total_cash: float | None = None
+    halal_status: str = "unknown"
+    halal_note: str = ""
     headlines: list[str] = field(default_factory=list)
 
     def as_prompt_dict(self) -> dict[str, Any]:
-        d = {k: v for k, v in self.__dict__.items() if v not in (None, "", [])}
+        d = {k: v for k, v in self.__dict__.items() if v not in (None, "", []) and k not in ("total_debt", "total_cash")}
         for k, v in list(d.items()):
             if isinstance(v, float):
                 d[k] = round(v, 2)
@@ -125,6 +130,9 @@ def enrich_fundamentals(s: StockSnapshot, today: date | None = None) -> None:
         info = tk.info or {}
         s.name = str(info.get("shortName") or info.get("longName") or s.ticker)
         s.sector = str(info.get("sector") or "")
+        s.industry = str(info.get("industry") or "")
+        s.total_debt = _clean(info.get("totalDebt"))
+        s.total_cash = _clean(info.get("totalCash"))
         s.pe = _clean(info.get("trailingPE"))
         s.forward_pe = _clean(info.get("forwardPE"))
         s.market_cap = _clean(info.get("marketCap"))

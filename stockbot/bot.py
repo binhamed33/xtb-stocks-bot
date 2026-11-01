@@ -23,7 +23,10 @@ from . import market_calendar as cal
 from .analyst import Analyst, DailyBrief, Pick
 from .config import Settings
 from .data import StockSnapshot, fetch_quotes, fetch_universe, index_overview
+from .halal import screen
 from .notify import BLUE, GREEN, GREY, ORANGE, PURPLE, RED, Discord
+
+FOOTER = "أسهم فعلية فقط (لا CFD ولا رافعة). أبحاث آلية وليست نصيحة استثمارية. الأسعار من Yahoo Finance."
 
 log = logging.getLogger(__name__)
 
@@ -75,6 +78,25 @@ class StocksBot:
         local = dt.astimezone(self.s.user_tz).strftime("%H:%M")
         return f"{local} بتوقيتك ({et} نيويورك)"
 
+    @staticmethod
+    def _countdown(until: datetime, now: datetime) -> str:
+        secs = max(0, int((until - now).total_seconds()))
+        h, m = divmod(secs // 60, 60)
+        return f"{h} ساعة و{m} دقيقة" if h else f"{m} دقيقة"
+
+    def _apply_halal(self, snaps: list[StockSnapshot]) -> tuple[list[StockSnapshot], list[StockSnapshot]]:
+        """Stamp every snapshot with its verdict; return (allowed, rejected)."""
+        allowed, rejected = [], []
+        for sn in snaps:
+            v = screen(sn.ticker, sn.sector, sn.industry, sn.market_cap, sn.total_debt, sn.total_cash,
+                       self.s.halal_whitelist, self.s.halal_blacklist)
+            sn.halal_status, sn.halal_note = v.status, v.label()
+            if self.s.halal_only and not v.ok:
+                rejected.append(sn)
+            else:
+                allowed.append(sn)
+        return allowed, rejected
+
     def _mark(self, day: str, event: str) -> None:
         self.state.sent.setdefault(day, []).append(event)
         self.state.save(self.s.state_file)
@@ -114,7 +136,14 @@ class StocksBot:
         open_dt, close_dt = sess
         pre_dt = open_dt - timedelta(minutes=self.s.premarket_minutes_before_open)
         mid_dt = open_dt.replace(hour=self.s.midday_hour_et, minute=0)
+        local = now.astimezone(self.s.user_tz)
 
+        if (local.hour >= self.s.morning_hour_local and now < pre_dt and not self._done(day, "morning")):
+            self.discord.embed("⏰ السوق الأمريكي يفتح اليوم",
+                               description=f"يفتح بعد **{self._countdown(open_dt, now)}** ({self._t(open_dt)})\n"
+                                           f"النشرة تصلك قبل الفتح بـ {self.s.premarket_minutes_before_open} دقيقة.",
+                               color=GREY)
+            self._mark(day, "morning")
         if now >= pre_dt and not self._done(day, "premarket"):
             self.send_premarket(day, open_dt, close_dt)
         if now >= open_dt and not self._done(day, "open"):
@@ -131,14 +160,19 @@ class StocksBot:
         if not snaps:
             self.discord.embed("⚠️ تعذر جلب بيانات الأسهم", color=ORANGE)
             return
+        snaps, rejected = self._apply_halal(snaps)
         self._snaps_cache = (day, snaps)
         indices = index_overview()
         brief = self.analyst.daily_brief(snaps, indices, day, self.state.open_ideas)
+        self._last_rejected = rejected
         price = {s.ticker: s.price for s in snaps}
 
         # record today's ideas for performance tracking
+        tracked = list(brief.buys)
+        if brief.top_idea and brief.top_idea.action == "BUY" and all(p.ticker != brief.top_idea.ticker for p in tracked):
+            tracked.insert(0, brief.top_idea)
         ideas = [{"ticker": p.ticker, "action": p.action, "entry": price.get(p.ticker), "stop": p.stop_loss,
-                  "target": p.target, "date": day} for p in brief.buys]
+                  "target": p.target, "date": day} for p in tracked if p.stop_loss and p.target]
         self.state.ideas[day] = ideas
         for i in ideas:
             if i["entry"] and not any(o["ticker"] == i["ticker"] for o in self.state.open_ideas):
@@ -160,6 +194,7 @@ class StocksBot:
                 {"name": "يغلق", "value": self._t(close_dt), "inline": True},
                 {"name": "المؤشرات (أمس)", "value": idx or "-", "inline": False},
                 {"name": "أحداث مهمة اليوم", "value": "\n".join(f"• {e}" for e in brief.key_events[:6]) or "-", "inline": False},
+                {"name": "🕌 فحص الحلال", "value": self._halal_summary(snaps), "inline": False},
             ],
         }]
         if brief.top_idea:
@@ -177,9 +212,19 @@ class StocksBot:
         if brief.holdings_advice:
             embeds.append({"title": "💼 محفظتك", "color": GREY,
                            "fields": [{"name": f"{p.ticker}: {'احتفظ' if p.action == 'HOLD' else 'بع'}", "value": p.reason[:1000], "inline": False} for p in brief.holdings_advice]})
-        embeds.append({"description": "هذه أبحاث آلية وليست نصيحة استثمارية. نفّذ فقط ما تفهمه وبحجم تتحمل خسارته. الأسعار من Yahoo Finance.",
-                       "color": GREY})
+        embeds.append({"description": FOOTER, "color": GREY})
         self.discord.embeds(embeds)
+
+    def _halal_summary(self, snaps: list[StockSnapshot]) -> str:
+        rejected = getattr(self, "_last_rejected", [])
+        passed = sum(1 for x in snaps if x.halal_status == "pass")
+        unknown = [x.ticker for x in snaps if x.halal_status != "pass"]
+        txt = f"{passed} سهماً اجتاز فحص AAOIFI (نشاط مباح، دين < 33%، نقد < 33%)."
+        if rejected:
+            txt += "\nمستبعد: " + "، ".join(f"{x.ticker} ({x.halal_note.split(': ', 1)[-1]})" for x in rejected[:8])
+        if unknown:
+            txt += "\nلم يتأكد: " + "، ".join(unknown[:8])
+        return txt[:1000]
 
     def _pick_embed(self, p: Pick, by: dict[str, StockSnapshot], label: str, color: int) -> dict:
         s = by.get(p.ticker)
@@ -200,6 +245,7 @@ class StocksBot:
                        {"name": "عدد الأسهم المقترح", "value": f"{shares} (مخاطرة {risk_usd:.0f}$ من {self.s.portfolio_size:,.0f}$)", "inline": True}]
         fields += [{"name": "المدة", "value": p.horizon or "-", "inline": True},
                    {"name": "الثقة", "value": f"{p.conviction:.0%}", "inline": True},
+                   {"name": "🕌 الحلال", "value": (s.halal_note if s and s.halal_note else "❓ لم يُفحص")[:1024], "inline": False},
                    {"name": "السبب", "value": p.reason[:1000], "inline": False}]
         if p.risk_note:
             fields.append({"name": "⚠️ ما يلغي الفكرة", "value": p.risk_note[:1000], "inline": False})
@@ -209,7 +255,9 @@ class StocksBot:
         return {"title": title[:256], "color": color, "fields": fields}
 
     def send_open(self, day: str, close_dt: datetime) -> None:
-        self.discord.embed("🔔 السوق الأمريكي فتح الآن", description=f"الإغلاق {self._t(close_dt)}", color=GREEN)
+        now = self.now()
+        self.discord.embed("🔔 السوق الأمريكي فتح الآن",
+                           description=f"يغلق بعد **{self._countdown(close_dt, now)}** ({self._t(close_dt)})", color=GREEN)
         self._mark(day, "open")
 
     def _ideas_performance(self, day: str) -> list[dict]:
@@ -271,7 +319,10 @@ class StocksBot:
             fields.append(("دروس اليوم", "\n".join(f"• {x}" for x in lessons), False))
         if watch:
             fields.append(("راقب غداً", "\n".join(f"• {x}" for x in watch), False))
-        self.discord.embed(f"🔕 السوق أغلق — {day}", description=text, fields=fields, color=RED if "-" in idx.split("|")[0] else GREEN)
+        nxt = cal.next_session(self.now() + timedelta(minutes=1))
+        fields.append(("الافتتاح القادم", f"{nxt[0].astimezone(self.s.user_tz):%A %Y-%m-%d} الساعة {self._t(nxt[0])}", False))
+        self.discord.embed(f"🔕 السوق أغلق — {day}", description=text, fields=fields,
+                           color=RED if "-" in idx.split("|")[0] else GREEN, footer=FOOTER)
         self._mark(day, "close")
 
     def _movers(self) -> list[dict]:
@@ -292,6 +343,7 @@ class StocksBot:
         nxt = cal.next_session(now)
         day = now.astimezone(cal.ET).date().isoformat()
         snaps = fetch_universe(list(self.s.universe))
+        snaps, self._last_rejected = self._apply_halal(snaps)
         indices = index_overview()
         brief = self.analyst.daily_brief(snaps, indices, day, self.state.open_ideas)
         self._post_brief(brief, snaps, indices, nxt[0], nxt[1], day)

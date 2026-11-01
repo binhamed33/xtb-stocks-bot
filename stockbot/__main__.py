@@ -5,6 +5,8 @@
     python -m stockbot test-discord  # send a test message to the webhook
     python -m stockbot calendar      # show today's state and the next session in your timezone
     python -m stockbot status        # sent events and open ideas
+    python -m stockbot halal         # run the Shariah screen on the watch-list and print verdicts
+    python -m stockbot preview       # print example cards offline (no network, no keys)
 """
 
 from __future__ import annotations
@@ -65,6 +67,21 @@ def main(argv: list[str]) -> int:
                            fields=[("الأسهم المراقبة", str(len(s.universe)), True), ("توقيتك", s.user_tz.key, True)], color=BLUE)
         print("sent" if ok else "FAILED (check DISCORD_WEBHOOK_URL)")
         return 0 if ok else 1
+
+    if cmd == "halal":
+        from .data import fetch_universe
+        from .halal import screen
+
+        for sn in fetch_universe(list(s.universe)):
+            v = screen(sn.ticker, sn.sector, sn.industry, sn.market_cap, sn.total_debt, sn.total_cash,
+                       s.halal_whitelist, s.halal_blacklist)
+            print(f"{sn.ticker:6} {v.status:7} {sn.industry[:32]:32} {v.label()}")
+        return 0
+
+    if cmd == "preview":
+        from .preview import run_preview
+
+        return run_preview(s)
 
     state = State.load(s.state_file)
     if cmd == "status":

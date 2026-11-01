@@ -7,11 +7,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+# Large US names available on XTB, pre-filtered to avoid obviously non-permissible businesses
+# (no banks, insurers, card networks, alcohol, entertainment, defence, crypto exchanges).
+# Every name is still screened automatically before any recommendation (see halal.py).
 DEFAULT_UNIVERSE = (
-    "AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,AVGO,AMD,NFLX,"
-    "JPM,V,MA,BRK-B,UNH,LLY,JNJ,XOM,CVX,COST,"
-    "WMT,HD,PG,KO,PEP,DIS,BA,CAT,ORCL,CRM,"
-    "PLTR,UBER,SHOP,COIN,MU,INTC,QCOM,ARM,SMCI,TSM"
+    "AAPL,MSFT,NVDA,AMZN,GOOGL,META,TSLA,AVGO,AMD,ADBE,"
+    "ORCL,CRM,CSCO,QCOM,TXN,INTC,MU,ARM,TSM,ASML,"
+    "LLY,JNJ,PFE,MRK,ABBV,TMO,XOM,CVX,COST,WMT,"
+    "HD,PG,KO,PEP,NKE,CAT,DE,HON,LIN,PLTR,UBER,SHOP,SMCI,NOW"
 )
 
 
@@ -85,6 +88,10 @@ class Settings:
     state_dir: Path
     log_file: Path | None
     language: str
+    halal_only: bool
+    halal_whitelist: frozenset[str]
+    halal_blacklist: frozenset[str]
+    morning_hour_local: int
 
     @property
     def state_file(self) -> Path:
@@ -123,4 +130,8 @@ def load_settings() -> Settings:
         state_dir=Path(_env("BOT_STATE_DIR", "./state") or "./state"),
         log_file=Path(log_raw) if log_raw else None,
         language=_env("LANGUAGE", "ar") or "ar",
+        halal_only=_bool("HALAL_ONLY", True),
+        halal_whitelist=frozenset(t.strip().upper() for t in (_env("HALAL_WHITELIST") or "").split(",") if t.strip()),
+        halal_blacklist=frozenset(t.strip().upper() for t in (_env("HALAL_BLACKLIST") or "").split(",") if t.strip()),
+        morning_hour_local=max(0, min(_int("MORNING_HOUR_LOCAL", 9), 23)),
     )
