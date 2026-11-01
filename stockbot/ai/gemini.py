@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from typing import Any, Type, TypeVar
 
 from pydantic import BaseModel, Field
@@ -75,7 +76,9 @@ class GeminiClient(AIClient):
     def __init__(self, api_key: str, model: str, db: Database, daily_limit: int = 200) -> None:
         from google import genai
 
-        self.client = genai.Client(api_key=api_key)
+        from google.genai import types as _t
+
+        self.client = genai.Client(api_key=api_key, http_options=_t.HttpOptions(timeout=90_000))  # ms
         self.model = model
         self.db = db
         self.daily_limit = daily_limit
@@ -92,6 +95,7 @@ class GeminiClient(AIClient):
         lang = {"ar": "Arabic (clear, Gulf-friendly, no slang)", "en": "English"}.get(language, language)
         prompt = f"TASK: {task}\n\nDATA (JSON, with sources):\n{json.dumps(payload, ensure_ascii=False, default=str)[:60000]}"
         ok = False
+        t0 = time.time()
         try:
             for attempt in range(2):
                 try:
@@ -116,9 +120,10 @@ class GeminiClient(AIClient):
             if parsed is None and getattr(resp, "text", None):
                 parsed = schema.model_validate_json(resp.text)
             ok = parsed is not None
+            log.info("Gemini %s: %s in %.1fs (%s)", self.model, 'ok' if ok else 'empty', time.time() - t0, task[:40])
             return parsed  # type: ignore[return-value]
         except Exception as exc:  # noqa: BLE001
-            log.warning("Gemini %s failed: %s", task, exc)
+            log.warning("Gemini %s failed after %.1fs: %s", task, time.time() - t0, exc)
             return None
         finally:
             self.db.usage_record("gemini", task, ok)

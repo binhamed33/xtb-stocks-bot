@@ -68,7 +68,9 @@ class DataHub:
             ok = True
             return out
         finally:
-            self.db.usage_record(provider, endpoint, ok, int((time.monotonic() - t0) * 1000))
+            ms = int((time.monotonic() - t0) * 1000)
+            self.db.usage_record(provider, endpoint, ok, ms)
+            log.info("%s %s: %s in %dms", provider, endpoint, 'ok' if ok else 'FAILED', ms)
 
     def _cached(self, key: str, ttl: float, source: str, fn: Callable[[], Any], decode: Callable[[Any], T]) -> Sourced[T] | None:
         hit = self.db.cache_get(key)

@@ -51,7 +51,7 @@ class YahooProvider:
     def history(self, ticker: str, period: str = "1y") -> list[Candle]:
         import yfinance as yf
 
-        df = yf.download(ticker, period=period, interval="1d", progress=False, auto_adjust=True, threads=False)
+        df = yf.download(ticker, period=period, interval="1d", progress=False, auto_adjust=True, threads=False, timeout=30)
         if df is None or df.empty:
             return []
         df = _flatten(df)
@@ -69,7 +69,7 @@ class YahooProvider:
         if not tickers:
             return out
         df = yf.download(tickers, period=period, interval="1d", group_by="ticker", progress=False,
-                         auto_adjust=True, threads=True)
+                         auto_adjust=True, threads=True, timeout=30)
         if df is None or df.empty:
             return out
         for t in tickers:

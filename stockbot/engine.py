@@ -129,6 +129,7 @@ class Engine:
     def analyze(self, ticker: str, with_ai: bool = True, with_news: bool = True) -> StockReport:
         t = ticker.upper().strip()
         warnings: list[str] = []
+        t0 = time.time()
         quote = self.hub.quote(t)
         fund = self.hub.fundamentals(t)
         candles = self.hub.history(t, "2y")
@@ -162,6 +163,8 @@ class Engine:
                                                    NewsDigest, self.s.language)
         self.db.x("INSERT INTO reports(ticker,kind,payload,created_at) VALUES (?,?,?,?)",
                   (t, "analysis", json.dumps(self.summary_dict(rep), ensure_ascii=False, default=str), time.time()))
+        log.info("analyze %s done in %.1fs (sharia=%s xtb=%s score=%s ai=%s)", t, time.time() - t0,
+                 verdict.status if verdict else None, xtb.status, opp.total, bool(rep.narrative))
         return rep
 
     def _ai_payload(self, r: StockReport) -> dict[str, Any]:
