@@ -48,6 +48,11 @@ def _logging(log_file) -> None:  # noqa: ANN001
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s", handlers=handlers)
     for noisy in ("yfinance", "peewee", "httpx", "discord", "google_genai", "urllib3"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
+    import warnings
+
+    warnings.filterwarnings("ignore", module="yfinance")      # pandas deprecation noise from yfinance internals
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def main(argv: list[str]) -> int:
