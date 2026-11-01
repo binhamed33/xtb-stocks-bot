@@ -41,7 +41,7 @@ def analyze(f: Fundamentals, tech: TechnicalView | None = None) -> FundamentalVi
     h = 50.0
     if f.profit_margin is not None:
         if f.profit_margin > 0.15:
-            h += 12; v.strengths.append(f"هامش ربح صافٰ مرتفع {_pct(f.profit_margin)}")
+            h += 12; v.strengths.append(f"هامش ربح صافٍ مرتفع {_pct(f.profit_margin)}")
         elif f.profit_margin > 0.05:
             h += 5
         elif f.profit_margin < 0:

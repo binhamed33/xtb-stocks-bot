@@ -35,7 +35,7 @@ class Opportunity:
     warnings: list[str] = field(default_factory=list)
 
     def category_ar(self) -> str:
-        return {STRONG: "فرصة قوية", RECOVERY: "تعافٰ محتمل", HRHR: "مخاطرة عالية / عائد عالٰ",
+        return {STRONG: "فرصة قوية", RECOVERY: "تعافٍ محتمل", HRHR: "مخاطرة عالية / عائد عالٍ",
                 WATCH: "قائمة متابعة", AVOID: "تجنّب", UNVERIFIED: "غير مؤكد"}[self.category]
 
 
