@@ -26,7 +26,7 @@ from .data import StockSnapshot, fetch_quotes, fetch_universe, index_overview
 from .halal import screen
 from .notify import BLUE, GREEN, GREY, ORANGE, PURPLE, RED, Discord
 
-FOOTER = "أسهم فعلية فقط (لا CFD ولا رافعة). أبحاث آلية وليست نصيحة استثمارية. الأسعار من Yahoo Finance."
+FOOTER = "أسهم فعلية فقط (لا CFD ولا رافعة). أبحاث آلية وليست نصيحة استثمارية. الأسعار من Yahoo Finance. © Abdulrhman AL-Riyami"
 
 log = logging.getLogger(__name__)
 

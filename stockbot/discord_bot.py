@@ -106,7 +106,7 @@ class StocksDiscordBot(discord.Client):
         self._sched_task = asyncio.create_task(self._scheduler_loop())
 
     async def on_ready(self) -> None:
-        log.info("Discord bot ready as %s", self.user)
+        log.info("Discord bot ready as %s (© Abdulrhman AL-Riyami)", self.user)
 
     async def _post_channel(self, dicts: list[dict[str, Any]]) -> None:
         if not self.s.discord_channel_id:
@@ -374,6 +374,7 @@ class StocksDiscordBot(discord.Client):
                 await bot.fail(inter, "للمشرفين فقط"); return
             st = engine.status()
             e = discord.Embed(title="⚙️ حالة النظام", color=BLUE)
+            e.set_footer(text=f"تطوير وحقوق: Abdulrhman AL-Riyami · {render.AUTHOR}")
             e.add_field(name="مصادر البيانات", value="\n".join(f"• {k}: {v}" for k, v in st["providers"].items())[:1000], inline=False)
             e.add_field(name="الذكاء الاصطناعي", value=st["ai"], inline=False)
             e.add_field(name="المنهجية الشرعية", value=st["sharia_method"][:1000], inline=False)

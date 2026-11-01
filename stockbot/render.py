@@ -16,7 +16,8 @@ from .engine import StockReport
 from .notify import BLUE, GREEN, GREY, ORANGE, PURPLE, RED
 from .portfolio import PortfolioView
 
-DISCLAIMER = "أسهم حقيقية فقط (لا CFD ولا رافعة) · أبحاث آلية وليست نصيحة استثمارية ولا أوامر تنفيذ · لا يوجد ربح مضمون"
+AUTHOR = "© Abdulrhman AL-Riyami"
+DISCLAIMER = f"أسهم حقيقية فقط (لا CFD ولا رافعة) · أبحاث آلية وليست نصيحة استثمارية ولا أوامر تنفيذ · لا يوجد ربح مضمون · {AUTHOR}"
 
 
 def _f(x: float | None, d: int = 2, suffix: str = "") -> str:
@@ -92,7 +93,7 @@ def sharia_embed(r: StockReport, history: list[dict] | None = None) -> dict[str,
         fields.append({"name": "سجل الفحوص", "value": "\n".join(f"{time.strftime('%Y-%m-%d', time.gmtime(h['screened_at']))}: {h['status']} ({h['method']})" for h in history[:5]), "inline": False})
     color = {sh.HALAL: GREEN, sh.NON_COMPLIANT: RED, sh.QUESTIONABLE: ORANGE, sh.UNVERIFIED: GREY}[v.status]
     return {"title": f"🕌 الفحص الشرعي — {r.ticker}", "color": color, "fields": fields,
-            "footer": {"text": "فحص آلي من بيانات مالية مجانية؛ نسبة الدخل غير الجائز لا تُقاس منها غالباً. للتأكد استخدم فاحصاً معتمداً (Zoya/Musaffa)."}}
+            "footer": {"text": f"فحص آلي من بيانات مالية مجانية؛ نسبة الدخل غير الجائز لا تُقاس منها غالباً. للتأكد استخدم فاحصاً معتمداً (Zoya/Musaffa). {AUTHOR}"}}
 
 
 def technical_embed(r: StockReport) -> dict[str, Any]:
@@ -175,7 +176,7 @@ def news_embed(r: StockReport) -> dict[str, Any]:
             fields.append({"name": "محفزات من الأخبار", "value": "\n".join(f"• {x}" for x in d.key_catalysts[:4])[:500], "inline": False})
     desc = "" if lines else "لا توجد أخبار حديثة من المصادر المتصلة (Yahoo Finance" + (", Finnhub" if "Finnhub" in n.sources else "") + "). لم يُختلق شيء."
     return {"title": f"📰 الأخبار والأحداث — {r.ticker}", "description": desc, "color": BLUE, "fields": fields,
-            "footer": {"text": "الروابط تؤدي للمصدر الأصلي. تاريخ النشر قد يختلف عن تاريخ الحدث."}}
+            "footer": {"text": f"الروابط تؤدي للمصدر الأصلي. تاريخ النشر قد يختلف عن تاريخ الحدث. {AUTHOR}"}}
 
 
 def risk_embed(r: StockReport) -> dict[str, Any]:
@@ -295,7 +296,7 @@ def market_embed(idx: dict[str, Any], state_line: str) -> dict[str, Any]:
         if last is not None:
             fields.append({"name": label, "value": f"{last:,.2f} ({_pct(chg)})", "inline": True})
     return {"title": "🌐 ملخص الأسواق", "description": state_line, "color": BLUE, "fields": fields or [{"name": "-", "value": "لا بيانات", "inline": False}],
-            "footer": {"text": "Yahoo Finance · متأخر ~15 دقيقة"}}
+            "footer": {"text": f"Yahoo Finance · متأخر ~15 دقيقة · {AUTHOR}"}}
 
 
 def portfolio_embeds(v: PortfolioView, currency_note: str = "") -> list[dict[str, Any]]:
@@ -319,7 +320,7 @@ def portfolio_embeds(v: PortfolioView, currency_note: str = "") -> list[dict[str
         {"name": "مستوى المخاطرة", "value": f"{lvl}\n" + "\n".join(f"• {x}" for x in v.risk_notes)[:500], "inline": False},
     ]
     return [{"title": "💼 المحفظة", "color": color, "fields": fields,
-             "footer": {"text": (currency_note + " · " if currency_note else "") + "الأسعار متأخرة ~15 دقيقة · لا تنفيذ تلقائي"}}]
+             "footer": {"text": (currency_note + " · " if currency_note else "") + f"الأسعار متأخرة ~15 دقيقة · لا تنفيذ تلقائي · {AUTHOR}"}}]
 
 
 def text(embeds: list[dict[str, Any]]) -> str:
