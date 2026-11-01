@@ -1,5 +1,5 @@
 [Unit]
-Description=XTB stocks brief bot (Discord)
+Description=XTB stocks research bot (Discord)
 After=network-online.target
 Wants=network-online.target
 
@@ -7,8 +7,7 @@ Wants=network-online.target
 Type=simple
 User=stocksbot
 WorkingDirectory=/opt/xtb-stocks-bot
-EnvironmentFile=/opt/xtb-stocks-bot/.env
-ExecStart=/opt/xtb-stocks-bot/.venv/bin/python -m stockbot run
+ExecStart=/bin/bash /opt/xtb-stocks-bot/deploy/start.sh
 Restart=always
 RestartSec=30
 KillSignal=SIGTERM

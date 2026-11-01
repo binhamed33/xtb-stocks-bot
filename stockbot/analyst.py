@@ -1,4 +1,8 @@
-"""Claude analysis -> structured daily brief (Arabic by default)."""
+"""Daily brief models + Gemini-backed analyst for the scheduled pre-market/close posts.
+
+Gemini (google-genai) is the only AI provider. Without GEMINI_API_KEY the
+scheduler uses `rules.RulesAnalyst` (programmatic picks) instead.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +10,6 @@ import json
 import logging
 from typing import Literal
 
-import anthropic
 from pydantic import BaseModel, Field
 
 from .config import Settings
@@ -43,60 +46,37 @@ class CloseSummary(BaseModel):
     tomorrow_watch: list[str] = Field(description="Up to 5 things to watch tomorrow", max_length=6)
 
 
-SYSTEM = """You are the research desk of a small, careful stock investor who trades US shares
-through XTB (cash stocks, no leverage, no shorting). You write in {language}.
-
-You receive a quantitative snapshot of a fixed watch-list (prices, trend, momentum, 52-week
-position, volume, valuation, earnings dates, headlines), an index overview, and the user's
-holdings. You do NOT have live news beyond the headlines given; say so when it matters.
-
-Rules:
+BRIEF_RULES = """Rules for the pre-market brief:
 - Be selective. A BUY needs several aligned signals and a clear invalidation. Fewer, better picks.
-- Every BUY includes an entry zone, an absolute stop_loss below a real level, and a target
-  with at least 2:1 reward-to-risk. Stops wider than ~8% are usually wrong for stocks.
-- AVOID names with earnings in the next 2 trading days unless the thesis is specifically about it.
-  Flag earnings within 7 days inside risk_note.
-- SELL only applies to holdings or to names the user might own from earlier briefs: take profit
-  when the target is reached or the thesis broke.
-- conviction is your honest probability the idea works within the horizon. Most ideas are 0.5-0.65.
-- Stay within the max counts given. Mention prices with two decimals.
-- Keep every reason concrete: name the level, the indicator, the event. No filler.
-- Do not invent news. Never guarantee results; this is research, not advice.
-"""
+- Every BUY includes an entry zone, an absolute stop_loss below a real level, and a target with at least
+  2:1 reward-to-risk. Stops wider than ~8% are usually wrong for stocks.
+- AVOID names with earnings in the next 2 trading days unless the thesis is about it; flag earnings within 7 days.
+- SELL applies only to the user's holdings or earlier ideas: take profit at target or when the thesis broke.
+- conviction is your honest probability the idea works within the horizon; most ideas are 0.5-0.65.
+- Only tickers present in the input. Stay within the max counts. Prices with two decimals. No invented news."""
 
 
 class Analyst:
-    def __init__(self, settings: Settings, client: anthropic.Anthropic | None = None) -> None:
-        self.s = settings
-        self.client = client or anthropic.Anthropic()
+    """Gemini-backed brief. `ai` is an AIClient from stockbot.ai (must be enabled)."""
 
-    def _system(self) -> str:
-        lang = {"ar": "Arabic (Gulf-friendly, clear, no slang)", "en": "English"}.get(self.s.language, self.s.language)
-        return SYSTEM.format(language=lang)
+    def __init__(self, settings: Settings, ai) -> None:  # noqa: ANN001
+        self.s = settings
+        self.ai = ai
 
     def daily_brief(self, snaps: list[StockSnapshot], indices: dict, today: str,
                     previous_picks: list[dict] | None = None) -> DailyBrief:
         payload = {
-            "date": today,
-            "limits": {"max_buys": self.s.max_buy_picks, "max_sells": self.s.max_sell_picks,
-                       "max_avoid": self.s.max_avoid_picks},
+            "date": today, "rules": BRIEF_RULES,
+            "limits": {"max_buys": self.s.max_buy_picks, "max_sells": self.s.max_sell_picks, "max_avoid": self.s.max_avoid_picks},
             "portfolio": {"size_usd": self.s.portfolio_size, "risk_per_trade_pct": self.s.risk_per_trade_pct},
             "holdings": [h.__dict__ for h in self.s.holdings],
             "previous_open_ideas": previous_picks or [],
             "indices": indices,
             "stocks": [s.as_prompt_dict() for s in snaps],
         }
-        resp = self.client.messages.parse(
-            model=self.s.anthropic_model, max_tokens=16000,
-            system=[{"type": "text", "text": self._system(), "cache_control": {"type": "ephemeral"}}],
-            thinking={"type": "adaptive"}, output_config={"effort": self.s.claude_effort},
-            messages=[{"role": "user", "content": "Produce today's pre-market brief.\n\n" + json.dumps(payload, ensure_ascii=False)}],
-            output_format=DailyBrief,
-        )
-        self._log_usage(resp)
-        if resp.parsed_output is None:
-            raise RuntimeError(f"no brief (stop_reason={resp.stop_reason})")
-        brief = resp.parsed_output
+        brief = self.ai.generate("Produce today's pre-market brief.", payload, DailyBrief, self.s.language)
+        if brief is None:
+            raise RuntimeError("Gemini returned no brief")
         valid = {s.ticker for s in snaps} | {h.ticker for h in self.s.holdings}
         brief.buys = [p for p in brief.buys if p.ticker.upper() in valid and p.stop_loss and p.target][: self.s.max_buy_picks]
         brief.sells = [p for p in brief.sells if p.ticker.upper() in valid][: self.s.max_sell_picks]
@@ -107,19 +87,21 @@ class Analyst:
 
     def close_summary(self, indices: dict, picks_perf: list[dict], movers: list[dict], today: str) -> CloseSummary:
         payload = {"date": today, "indices": indices, "todays_ideas_performance": picks_perf, "biggest_movers": movers}
-        resp = self.client.messages.parse(
-            model=self.s.anthropic_model, max_tokens=8000,
-            system=[{"type": "text", "text": self._system(), "cache_control": {"type": "ephemeral"}}],
-            thinking={"type": "adaptive"}, output_config={"effort": "medium"},
-            messages=[{"role": "user", "content": "Write the closing-bell summary.\n\n" + json.dumps(payload, ensure_ascii=False)}],
-            output_format=CloseSummary,
-        )
-        self._log_usage(resp)
-        if resp.parsed_output is None:
-            raise RuntimeError(f"no summary (stop_reason={resp.stop_reason})")
-        return resp.parsed_output
+        res = self.ai.generate("Write the closing-bell summary from the data only.", payload, CloseSummary, self.s.language)
+        if res is None:
+            raise RuntimeError("Gemini returned no summary")
+        return res
 
-    @staticmethod
-    def _log_usage(resp) -> None:  # noqa: ANN001
-        u = resp.usage
-        log.info("Claude usage in=%s cached=%s out=%s", u.input_tokens, u.cache_read_input_tokens, u.output_tokens)
+
+def build_analyst(settings: Settings, ai):  # noqa: ANN001
+    """Gemini when available, programmatic rules otherwise."""
+    if ai is not None and getattr(ai, "enabled", False):
+        return Analyst(settings, ai)
+    from .rules import RulesAnalyst
+
+    log.warning("GEMINI_API_KEY not set: scheduled briefs use rule-based picks (no AI)")
+    return RulesAnalyst(settings.max_buy_picks, settings.max_avoid_picks, settings.holdings)
+
+
+def _unused() -> str:  # keep json imported for payload debugging helpers
+    return json.dumps({})

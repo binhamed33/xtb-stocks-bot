@@ -1,40 +1,14 @@
-"""Shariah (halal) screening, AAOIFI-style, applied to every stock before any recommendation.
+"""Backward-compatible wrapper around analysis.sharia (AAOIFI) for the scheduled brief and older tests.
 
-1. Business screen: companies whose main activity is non-permissible are excluded
-   (conventional banking/insurance/interest-based finance, alcohol, tobacco, gambling,
-   pork, adult entertainment, conventional entertainment/music/cinema, weapons/defence,
-   cannabis, crypto exchanges).
-2. Financial screen (AAOIFI thresholds):
-   - interest-bearing debt / market cap  < 33%
-   - cash + interest-bearing securities / market cap < 33%
-   (non-permissible income < 5% cannot be measured from free data; see note.)
-
-This is an automated approximation from Yahoo Finance data. For certainty, verify
-with a certified screener (Zoya, Musaffa, Islamicly) - HALAL_WHITELIST / HALAL_BLACKLIST
-let you override the automatic verdict.
+New code should use `stockbot.analysis.sharia` directly.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-DEBT_LIMIT = 0.33
-CASH_LIMIT = 0.33
-
-EXCLUDED_SECTORS = {"financial services", "financial"}
-EXCLUDED_INDUSTRY_KEYWORDS = (
-    "bank", "insurance", "credit services", "capital markets", "asset management", "mortgage",
-    "financial data", "lending", "consumer finance", "reit",
-    "alcohol", "beverages - brewers", "beverages - wineries", "distill", "tobacco",
-    "gambling", "casino", "lottery", "betting",
-    "pork", "adult",
-    "entertainment", "broadcasting", "media", "music", "cinema", "gaming",
-    "aerospace & defense", "defense", "weapons", "firearms",
-    "cannabis", "marijuana",
-    "crypto", "bitcoin",
-)
-# Industries that match a keyword above but are actually fine (keyword collision).
-INDUSTRY_ALLOW_OVERRIDE = ("electronic gaming & multimedia",)  # video games: treated as permissible by most screens
+from .analysis import sharia as sh
+from .providers.base import Fundamentals
 
 
 @dataclass(frozen=True)
@@ -63,41 +37,13 @@ class HalalVerdict:
 
 def screen(ticker: str, sector: str | None, industry: str | None, market_cap: float | None,
            total_debt: float | None, total_cash: float | None,
-           whitelist: frozenset[str] = frozenset(), blacklist: frozenset[str] = frozenset()) -> HalalVerdict:
-    t = ticker.upper()
-    if t in blacklist:
-        return HalalVerdict("fail", ("في القائمة السوداء اليدوية",))
-    if t in whitelist:
-        return HalalVerdict("pass", ("في القائمة البيضاء اليدوية",))
-
-    reasons: list[str] = []
-    sec = (sector or "").strip().lower()
-    ind = (industry or "").strip().lower()
-    if sec in EXCLUDED_SECTORS:
-        reasons.append(f"قطاع مالي تقليدي ({sector})")
-    elif ind and ind not in INDUSTRY_ALLOW_OVERRIDE:
-        hit = next((k for k in EXCLUDED_INDUSTRY_KEYWORDS if k in ind), None)
-        if hit:
-            reasons.append(f"نشاط غير جائز ({industry})")
-    if reasons:
-        return HalalVerdict("fail", tuple(reasons))
-
-    if not sector and not industry:
-        return HalalVerdict("unknown", ("بيانات القطاع غير متوفرة",))
-    if not market_cap:
-        return HalalVerdict("unknown", ("القيمة السوقية غير متوفرة",))
-
-    debt_ratio = (total_debt or 0.0) / market_cap
-    cash_ratio = (total_cash or 0.0) / market_cap
-    if total_debt is None:
-        reasons.append("بيانات الدين غير متوفرة")
-    elif debt_ratio >= DEBT_LIMIT:
-        return HalalVerdict("fail", (f"الدين {debt_ratio:.0%} من القيمة السوقية (الحد 33%)",), debt_ratio, cash_ratio)
-    if total_cash is None:
-        reasons.append("بيانات النقد غير متوفرة")
-    elif cash_ratio >= CASH_LIMIT:
-        return HalalVerdict("fail", (f"النقد والأوراق الربوية {cash_ratio:.0%} (الحد 33%)",), debt_ratio, cash_ratio)
-    if reasons:
-        return HalalVerdict("unknown", tuple(reasons), debt_ratio if total_debt is not None else None,
-                            cash_ratio if total_cash is not None else None)
-    return HalalVerdict("pass", (), debt_ratio, cash_ratio)
+           whitelist: frozenset[str] = frozenset(), blacklist: frozenset[str] = frozenset(),
+           method: str = "AAOIFI") -> HalalVerdict:
+    f = Fundamentals(ticker=ticker, sector=sector or "", industry=industry or "", market_cap=market_cap,
+                     total_debt=total_debt, total_cash=total_cash, total_assets=None)
+    v = sh.screen(f, method, whitelist=whitelist, blacklist=blacklist)
+    status = {sh.HALAL: "pass", sh.NON_COMPLIANT: "fail", sh.QUESTIONABLE: "unknown", sh.UNVERIFIED: "unknown"}[v.status]
+    # the scheduled brief only tracks debt/cash; a QUESTIONABLE purely for unmeasured income is treated as pass there
+    if v.status == sh.QUESTIONABLE and v.unverified and all("income" in u for u in v.unverified) and not v.business_note.startswith("check") and v.business_note == "permissible main activity":
+        status = "pass"
+    return HalalVerdict(status, tuple(v.reasons), v.ratios.get("debt"), v.ratios.get("cash"))

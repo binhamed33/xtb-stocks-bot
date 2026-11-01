@@ -23,13 +23,13 @@ fi
 mkdir -p "$DEST/state"
 rsync -a --delete "$SRC/stockbot/" "$DEST/stockbot/"
 cp "$SRC/requirements.txt" "$DEST/"
-cp -r "$SRC/deploy" "$DEST/"
+cp -r "$SRC/deploy" "$DEST/" && chmod +x "$DEST"/deploy/*.sh
 [ -d "$DEST/.venv" ] || python3 -m venv "$DEST/.venv"
 "$DEST/.venv/bin/pip" install -q --upgrade pip
 "$DEST/.venv/bin/pip" install -q -r "$DEST/requirements.txt"
 if [ ! -f "$DEST/.env" ]; then
   cp "$SRC/.env.example" "$DEST/.env"
-  echo ">>> Edit $DEST/.env: set DISCORD_WEBHOOK_URL and ANTHROPIC_API_KEY, then: systemctl restart xtb-stocks-bot"
+  echo ">>> Edit $DEST/.env: set DISCORD_WEBHOOK_URL, DISCORD_BOT_TOKEN and GEMINI_API_KEY, then: systemctl restart xtb-stocks-bot"
 fi
 touch "$DEST/bot.log"
 chown -R stocksbot:stocksbot "$DEST"
