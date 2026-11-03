@@ -25,6 +25,7 @@ from .bot import State, StocksBot
 from .config import Settings
 from .engine import Engine
 from .notify import BLUE, GREEN, GREY, ORANGE, RED, Discord as Webhook
+from . import help as helptext
 from . import render
 from .xtb import instruments as xi
 
@@ -56,6 +57,25 @@ class Pager(discord.ui.View):
     async def next(self, inter: discord.Interaction, _b: discord.ui.Button) -> None:
         self.i = (self.i + 1) % len(self.pages)
         await self._show(inter)
+
+
+class HelpButton(discord.ui.Button):
+    def __init__(self, key: str, label: str) -> None:
+        super().__init__(label=label, style=discord.ButtonStyle.success if key == "about" else discord.ButtonStyle.secondary,
+                         custom_id=f"help:{key}")
+        self.key = key
+
+    async def callback(self, inter: discord.Interaction) -> None:
+        await inter.response.edit_message(embed=discord.Embed.from_dict(helptext.embed(self.key)), view=self.view)
+
+
+class HelpView(discord.ui.View):
+    """One button per help section; clicking swaps the embed in place."""
+
+    def __init__(self, timeout: float = 900) -> None:
+        super().__init__(timeout=timeout)
+        for key, label in helptext.SECTIONS:
+            self.add_item(HelpButton(key, label))
 
 
 class StocksDiscordBot(discord.Client):
@@ -367,6 +387,10 @@ class StocksDiscordBot(discord.Client):
             await inter.response.send_message(f"📥 استُوردت {n} أداة", ephemeral=True)
 
         tree.add_command(xg)
+
+        @tree.command(name="help", description="شرح البوت: ما فائدته وكيف تستخدمه (مع أزرار للأقسام)")
+        async def help_cmd(inter: discord.Interaction) -> None:
+            await inter.response.send_message(embed=discord.Embed.from_dict(helptext.embed("about")), view=HelpView())
 
         @tree.command(name="status", description="حالة البوت: المصادر، Gemini، الاستهلاك")
         async def status(inter: discord.Interaction) -> None:
