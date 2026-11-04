@@ -29,9 +29,11 @@ systemctl restart xtb-stocks-web
 
 # ---- nginx site file (ours only) ------------------------------------------------------------
 if [ -d /etc/nginx/sites-enabled ]; then
-  SITE=/etc/nginx/sites-available/$DOMAIN
+  # always use a .conf suffix: some nginx.conf files include sites-enabled/*.conf only
+  SITE=/etc/nginx/sites-available/$DOMAIN.conf
   mkdir -p /etc/nginx/sites-available
-  LINK=/etc/nginx/sites-enabled/$DOMAIN
+  LINK=/etc/nginx/sites-enabled/$DOMAIN.conf
+  rm -f "/etc/nginx/sites-enabled/$DOMAIN" "/etc/nginx/sites-available/$DOMAIN"   # older name without suffix
 else
   SITE=/etc/nginx/conf.d/$DOMAIN.conf
   LINK=""
