@@ -142,6 +142,17 @@ class Settings:
     alert_drop_pct: float
     alert_check_minutes: int
 
+    # --- web (tdawl.riyami.om) ---
+    web_host: str
+    web_port: int
+    web_public_url: str              # e.g. https://tdawl.riyami.om (used for the OAuth redirect)
+    web_secret: str                  # signs the session cookie; generated into state/ if missing
+    web_auth: str                    # discord | code | open
+    web_access_code: str | None
+    discord_client_id: str | None
+    discord_client_secret: str | None
+    web_rate_per_minute: int
+
     @property
     def state_file(self) -> Path:
         return self.state_dir / "state.json"
@@ -149,6 +160,31 @@ class Settings:
     @property
     def gemini_enabled(self) -> bool:
         return bool(self.gemini_api_key)
+
+
+def _web_secret(state_dir: Path) -> str:
+    """WEB_SECRET from the environment, else a random one persisted in state/ so sessions survive restarts."""
+    env = _env("WEB_SECRET")
+    if env:
+        return env
+    p = state_dir / "web_secret"
+    try:
+        if p.exists():
+            return p.read_text().strip()
+        import secrets
+
+        state_dir.mkdir(parents=True, exist_ok=True)
+        val = secrets.token_urlsafe(48)
+        p.write_text(val)
+        try:
+            os.chmod(p, 0o600)
+        except OSError:
+            pass
+        return val
+    except OSError:
+        import secrets
+
+        return secrets.token_urlsafe(48)
 
 
 def load_settings() -> Settings:
@@ -170,6 +206,11 @@ def load_settings() -> Settings:
     admins = frozenset(int(x) for x in (_env("ADMIN_USER_IDS") or "").replace(";", ",").split(",") if x.strip().isdigit())
     chan = _env("DISCORD_CHANNEL_ID")
     guild = _env("DISCORD_GUILD_ID")
+    web_auth = (_env("WEB_AUTH") or ("discord" if _env("DISCORD_CLIENT_ID") else "code" if _env("WEB_ACCESS_CODE") else "open")).lower()
+    if web_auth not in ("discord", "code", "open"):
+        raise ConfigError("WEB_AUTH must be discord, code or open")
+    if web_auth == "discord" and not (_env("DISCORD_CLIENT_ID") and _env("DISCORD_CLIENT_SECRET")):
+        raise ConfigError("WEB_AUTH=discord needs DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET")
     return Settings(
         discord_webhook=_env("DISCORD_WEBHOOK_URL"),
         discord_bot_token=_env("DISCORD_BOT_TOKEN"),
@@ -207,4 +248,13 @@ def load_settings() -> Settings:
         language=_env("LANGUAGE", "ar") or "ar",
         alert_drop_pct=max(0.5, _float("ALERT_DROP_PCT", 5.0)),
         alert_check_minutes=max(5, _int("ALERT_CHECK_MINUTES", 30)),
+        web_host=_env("WEB_HOST", "127.0.0.1") or "127.0.0.1",
+        web_port=max(1, _int("WEB_PORT", 8787)),
+        web_public_url=(_env("WEB_PUBLIC_URL", "https://tdawl.riyami.om") or "https://tdawl.riyami.om").rstrip("/"),
+        web_secret=_web_secret(state_dir),
+        web_auth=web_auth,
+        web_access_code=_env("WEB_ACCESS_CODE"),
+        discord_client_id=_env("DISCORD_CLIENT_ID"),
+        discord_client_secret=_env("DISCORD_CLIENT_SECRET"),
+        web_rate_per_minute=max(5, _int("WEB_RATE_PER_MINUTE", 30)),
     )

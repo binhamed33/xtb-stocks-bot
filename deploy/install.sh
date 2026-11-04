@@ -38,6 +38,11 @@ cp "$DEST/deploy/xtb-stocks-bot.service" /etc/systemd/system/xtb-stocks-bot.serv
 systemctl daemon-reload
 systemctl enable xtb-stocks-bot >/dev/null
 systemctl restart xtb-stocks-bot
+# web dashboard: only (re)started when it was set up with install-web.sh
+if [ -f /etc/systemd/system/xtb-stocks-web.service ]; then
+  cp "$DEST/deploy/xtb-stocks-web.service" /etc/systemd/system/xtb-stocks-web.service
+  systemctl daemon-reload && systemctl restart xtb-stocks-web
+fi
 echo "Installed to $DEST  ($(git -C "$SRC" rev-parse --short HEAD))"
 echo "Status: systemctl status xtb-stocks-bot --no-pager | head -5"
 echo "Logs:   journalctl -u xtb-stocks-bot -f"

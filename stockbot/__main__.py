@@ -3,6 +3,9 @@
 Interactive Discord bot (slash commands + alerts + scheduler):
     python -m stockbot discord
 
+Web dashboard (tdawl.riyami.om; same engine and database):
+    python -m stockbot web
+
 Scheduled webhook posts only (no slash commands):
     python -m stockbot run           # open/close alerts, pre-market brief, close summary
     python -m stockbot now           # build and send a brief immediately
@@ -104,6 +107,12 @@ def main(argv: list[str]) -> int:
         from .discord_bot import run_discord
 
         run_discord(s, engine)
+        return 0
+
+    if cmd == "web":
+        from .web.app import run_web
+
+        run_web(s, engine)
         return 0
 
     if cmd in ("run", "now"):

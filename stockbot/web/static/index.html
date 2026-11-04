@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تداول · أبحاث الأسهم الحلال</title>
+<meta name="description" content="منصة أبحاث استثمارية للأسهم الحقيقية المتوافقة مع الشريعة عبر XTB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230b1020'/%3E%3Cpath d='M14 42 L26 30 L34 36 L50 20' stroke='%23d4af37' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="/static/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#070b16;--bg2:#0b1226;--card:rgba(255,255,255,.045);--card2:rgba(255,255,255,.08);--line:rgba(255,255,255,.09);
+  --text:#eef2ff;--muted:#9aa5c4;--gold:#d4af37;--gold2:#f3d77a;--green:#2ecc8f;--red:#ff5c7a;--orange:#ffb347;--blue:#5aa9ff;--purple:#b08cff;
+  --radius:18px;--shadow:0 20px 60px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:"Tajawal",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6}
+body::before{content:"";position:fixed;inset:-40%;z-index:-2;background:
+ radial-gradient(60% 50% at 20% 20%,rgba(212,175,55,.16),transparent 60%),
+ radial-gradient(50% 40% at 80% 10%,rgba(90,169,255,.16),transparent 60%),
+ radial-gradient(60% 60% at 70% 90%,rgba(176,140,255,.14),transparent 60%),
+ radial-gradient(40% 40% at 10% 80%,rgba(46,204,143,.12),transparent 60%);
+ animation:aurora 28s ease-in-out infinite alternate;filter:blur(30px)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;background:
+ linear-gradient(180deg,rgba(7,11,22,.2),rgba(7,11,22,.9)),
+ repeating-linear-gradient(0deg,transparent 0 38px,rgba(255,255,255,.025) 38px 39px),
+ repeating-linear-gradient(90deg,transparent 0 38px,rgba(255,255,255,.025) 38px 39px)}
+@keyframes aurora{0%{transform:translate(0,0) rotate(0deg) scale(1)}50%{transform:translate(4%,-3%) rotate(6deg) scale(1.08)}100%{transform:translate(-4%,3%) rotate(-5deg) scale(1.03)}}
+a{color:var(--gold2);text-decoration:none}a:hover{text-decoration:underline}
+.mono{font-family:"IBM Plex Mono",monospace}
+.container{max-width:1180px;margin:0 auto;padding:0 16px}
+/* header */
+header{position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);background:rgba(7,11,22,.65);border-bottom:1px solid var(--line)}
+.hdr{display:flex;align-items:center;gap:14px;padding:12px 0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:.5px}
+.logo .mark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--gold),#8a6a12);display:grid;place-items:center;box-shadow:0 8px 24px rgba(212,175,55,.35);animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 8px 24px rgba(212,175,55,.35)}50%{box-shadow:0 8px 34px rgba(212,175,55,.65)}}
+.logo small{display:block;font-size:11px;color:var(--muted);font-weight:500;letter-spacing:0}
+nav{display:flex;gap:4px;margin-inline-start:auto;overflow-x:auto;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav button{background:transparent;border:0;color:var(--muted);font:inherit;font-weight:700;padding:8px 12px;border-radius:12px;cursor:pointer;white-space:nowrap;transition:.2s}
+nav button:hover{color:var(--text);background:var(--card)}nav button.active{color:#111;background:linear-gradient(135deg,var(--gold2),var(--gold))}
+.user{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:13px}
+.user img{width:26px;height:26px;border-radius:50%}
+.btn{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#141414;border:0;font:inherit;font-weight:800;padding:12px 22px;border-radius:14px;cursor:pointer;transition:.2s;box-shadow:0 10px 30px rgba(212,175,55,.25)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(212,175,55,.4)}.btn:active{transform:translateY(0)}
+.btn.ghost{background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:none}.btn.sm{padding:8px 14px;font-size:14px;border-radius:10px}
+.btn.danger{background:linear-gradient(135deg,#ff7a90,#d93a55);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+/* hero */
+.hero{padding:60px 0 30px;text-align:center;position:relative}
+.hero h1{font-size:clamp(28px,5vw,52px);margin:0 0 8px;font-weight:800;background:linear-gradient(90deg,#fff,var(--gold2),#fff);background-size:200%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:200%}}
+.hero p{color:var(--muted);margin:0 auto 26px;max-width:720px;font-size:17px}
+.search{display:flex;gap:10px;max-width:680px;margin:0 auto;background:var(--card);border:1px solid var(--line);padding:8px;border-radius:20px;backdrop-filter:blur(10px);box-shadow:var(--shadow);transition:.3s}
+.search:focus-within{border-color:rgba(212,175,55,.6);box-shadow:0 0 0 4px rgba(212,175,55,.12),var(--shadow)}
+.search input{flex:1;background:transparent;border:0;color:var(--text);font:inherit;font-size:20px;padding:10px 14px;outline:0;text-transform:uppercase;letter-spacing:1px}
+.search input::placeholder{text-transform:none;letter-spacing:0;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.chip{background:var(--card);border:1px solid var(--line);color:var(--muted);padding:6px 12px;border-radius:999px;cursor:pointer;font-size:13px;transition:.2s}
+.chip:hover{color:var(--gold2);border-color:rgba(212,175,55,.5);transform:translateY(-1px)}
+.pills{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:24px;color:var(--muted);font-size:14px}
+.pills span::before{content:"✦";color:var(--gold);margin-inline-end:6px}
+/* cards */
+.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;backdrop-filter:blur(12px);position:relative;overflow:hidden;opacity:0;transform:translateY(14px);animation:rise .6s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--stripe,linear-gradient(90deg,var(--gold),transparent))}
+.card h3{margin:0 0 10px;font-size:18px;display:flex;align-items:center;gap:8px}
+.card .desc{color:var(--muted);white-space:pre-line;font-size:14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+.field{background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.field.wide{grid-column:1/-1}
+.field b{display:block;font-size:12px;color:var(--gold2);margin-bottom:4px;font-weight:700}
+.field div{font-size:14px;white-space:pre-line;word-break:break-word}
+.foot{margin-top:12px;font-size:11px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.section{display:none;padding:26px 0 60px}.section.active{display:block}
+h2.title{font-size:26px;margin:0 0 6px}h2.title+p{color:var(--muted);margin:0 0 18px}
+/* report hero */
+.rhero{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:860px){.rhero{grid-template-columns:1fr}}
+.price{font-size:44px;font-weight:800;line-height:1}.price small{font-size:16px;color:var(--muted);font-weight:500}
+.chg{font-weight:800;padding:4px 10px;border-radius:10px;font-size:14px}.up{color:var(--green);background:rgba(46,204,143,.12)}.down{color:var(--red);background:rgba(255,92,122,.12)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:700;font-size:13px;border:1px solid var(--line);background:rgba(0,0,0,.2)}
+.badge.ok{color:var(--green);border-color:rgba(46,204,143,.4)}.badge.no{color:var(--red);border-color:rgba(255,92,122,.4)}.badge.warn{color:var(--orange);border-color:rgba(255,179,71,.4)}.badge.unk{color:var(--muted)}
+.ring{width:150px;height:150px;position:relative;margin:auto}
+.ring svg{transform:rotate(-90deg)}.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
+.ring .track{stroke:rgba(255,255,255,.08)}.ring .bar{stroke:url(#grad);stroke-dasharray:420;stroke-dashoffset:420;transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;font-size:36px;font-weight:800}.ring .num small{display:block;font-size:11px;color:var(--muted);font-weight:500;text-align:center}
+.bars{display:grid;gap:8px;margin-top:14px}.bar{display:grid;grid-template-columns:70px 1fr 36px;align-items:center;gap:8px;font-size:13px}
+.bar i{display:block;height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.bar i b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 12px}.tabs button{background:var(--card);border:1px solid var(--line);color:var(--muted);font:inherit;font-weight:700;padding:8px 14px;border-radius:12px;cursor:pointer}
+.tabs button.active{color:#111;background:var(--gold2);border-color:var(--gold2)}
+.chartbox{height:340px;position:relative}
+/* skeleton / loading */
+.skel{height:14px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.14),rgba(255,255,255,.06));background-size:200%;animation:sk 1.2s infinite;margin:8px 0}
+@keyframes sk{to{background-position:-200%}}
+#loader{position:fixed;inset:0;z-index:100;display:none;place-items:center;background:rgba(7,11,22,.6);backdrop-filter:blur(6px)}
+#loader .box{text-align:center}
+.eq{display:flex;gap:6px;justify-content:center;height:44px;align-items:flex-end;margin-bottom:14px}.eq i{width:8px;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:4px;animation:eq 1s ease-in-out infinite}
+.eq i:nth-child(2){animation-delay:.1s}.eq i:nth-child(3){animation-delay:.2s}.eq i:nth-child(4){animation-delay:.3s}.eq i:nth-child(5){animation-delay:.4s}
+@keyframes eq{0%,100%{height:12px}50%{height:44px}}
+#toasts{position:fixed;bottom:18px;left:18px;z-index:120;display:grid;gap:8px}
+.toast{background:#141a2e;border:1px solid var(--line);border-inline-start:4px solid var(--gold);padding:12px 16px;border-radius:12px;box-shadow:var(--shadow);animation:rise .4s forwards;max-width:360px}
+.toast.err{border-inline-start-color:var(--red)}.toast.ok{border-inline-start-color:var(--green)}
+/* tables / forms */
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right}th{color:var(--muted);font-weight:700;font-size:12px}
+tr:hover td{background:rgba(255,255,255,.03)}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;align-items:end}
+.form label{display:grid;gap:4px;font-size:12px;color:var(--muted)}
+input.in,select.in{background:rgba(0,0,0,.25);border:1px solid var(--line);color:var(--text);font:inherit;padding:10px 12px;border-radius:10px;outline:0}
+input.in:focus,select.in:focus{border-color:var(--gold)}
+.news{display:grid;gap:10px}.news a.item{display:block;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--text);transition:.2s}
+.news a.item:hover{border-color:rgba(212,175,55,.5);text-decoration:none;transform:translateX(-3px)}
+.news .meta{font-size:12px;color:var(--muted);margin-top:4px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-inline-end:6px}
+.tile{text-align:center}.tile .v{font-size:22px;font-weight:800}.tile .k{font-size:12px;color:var(--muted)}
+.countdown{font-size:34px;font-weight:800;letter-spacing:2px}
+.opp{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.score-pill{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:22px;font-weight:800;background:rgba(212,175,55,.12);color:var(--gold2);border:1px solid rgba(212,175,55,.35)}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+.overlay{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:rgba(7,11,22,.85);backdrop-filter:blur(10px)}
+.overlay .card{max-width:420px;width:92%;text-align:center}
+.help-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+footer{border-top:1px solid var(--line);padding:24px 0;color:var(--muted);font-size:13px;text-align:center}
+footer b{color:var(--gold2)}
+.ai-box{background:linear-gradient(135deg,rgba(176,140,255,.12),rgba(90,169,255,.08));border:1px solid rgba(176,140,255,.35)}
+.kbd{font-family:"IBM Plex Mono",monospace;background:rgba(0,0,0,.3);padding:2px 6px;border-radius:6px;font-size:12px}
+.fade{animation:rise .5s forwards}
+@media(max-width:640px){.hero{padding:34px 0 20px}.price{font-size:34px}.hdr{flex-wrap:wrap}nav{order:3;width:100%}}
+</style>
+</head>
+<body>
+<header><div class="container hdr">
+  <div class="logo"><div class="mark">📈</div><div>تداول<small>أبحاث الأسهم الحلال · XTB</small></div></div>
+  <nav id="nav">
+    <button data-s="home" class="active">الرئيسية</button><button data-s="report">التحليل</button><button data-s="opps">الفرص</button>
+    <button data-s="market">السوق</button><button data-s="portfolio">المحفظة</button><button data-s="watch">المتابعة</button>
+    <button data-s="alerts">التنبيهات</button><button data-s="ask">اسأل</button><button data-s="help">المساعدة</button>
+  </nav>
+  <div id="userbox"></div>
+</div></header>
+
+<main class="container">
+<!-- HOME -->
+<section id="s-home" class="section active">
+  <div class="hero">
+    <h1>قرار استثماري مبني على دليل</h1>
+    <p>أسهم حقيقية فقط عبر XTB، متوافقة مع الشريعة بمنهجية موثقة، مع تحليل فني وأساسي وأخبار حقيقية وقراءة بالذكاء الاصطناعي.</p>
+    <form class="search" id="searchForm"><input id="sym" placeholder="اكتب رمز السهم مثل AAPL أو ASML أو 2222.SR" autocomplete="off" spellcheck="false"><button class="btn" type="submit">حلّل الآن</button></form>
+    <div class="chips" id="chips"></div>
+    <div class="pills"><span>لا CFD إطلاقاً</span><span>لا حكم حلال بلا دليل</span><span>لا تنفيذ تلقائي</span><span>كل رقم له مصدر ووقت</span></div>
+  </div>
+  <div class="grid g3" id="homeMarket"></div>
+  <div style="height:16px"></div>
+  <div class="grid g2" id="homeOpps"></div>
+</section>
+
+<!-- REPORT -->
+<section id="s-report" class="section">
+  <div id="reportEmpty" class="empty">ابحث عن سهم من الرئيسية لعرض التحليل الكامل هنا.</div>
+  <div id="report" style="display:none">
+    <div class="rhero">
+      <div class="card" style="--stripe:linear-gradient(90deg,var(--gold),var(--blue))">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div><div style="font-size:13px;color:var(--muted)" id="rMeta"></div><h2 style="margin:2px 0 6px;font-size:30px" id="rName"></h2>
+            <div class="price"><span id="rPrice">—</span> <small id="rCur"></small> <span class="chg" id="rChg"></span></div></div>
+          <div style="display:grid;gap:6px;justify-items:end"><span class="badge" id="bSharia"></span><span class="badge" id="bXtb"></span><span class="badge" id="bRisk"></span></div>
+        </div>
+        <div id="rTrend" style="margin-top:12px;color:var(--muted);font-size:14px"></div>
+        <div class="tabs" style="margin-top:14px">
+          <button class="btn sm ghost" onclick="loadSharia(state.ticker)">🕌 فحص شرعي مفصّل</button>
+          <button class="btn sm ghost" onclick="addWatch(state.ticker)">👀 أضف للمتابعة</button>
+          <button class="btn sm ghost" onclick="show('ask');$('#askSym').value=state.ticker">🤖 اسأل عنه</button>
+          <button class="btn sm ghost" onclick="loadReport(state.ticker,true)">↻ تحديث</button>
+        </div>
+      </div>
+      <div class="card" style="--stripe:linear-gradient(90deg,var(--purple),var(--gold))">
+        <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center">
+          <div class="ring"><svg width="150" height="150" viewBox="0 0 150 150"><defs><linearGradient id="grad" x1="0" x2="1"><stop offset="0" stop-color="#d4af37"/><stop offset="1" stop-color="#5aa9ff"/></linearGradient></defs>
+            <circle class="track" cx="75" cy="75" r="67"/><circle class="bar" id="ringBar" cx="75" cy="75" r="67"/></svg>
+            <div class="num"><div><span id="rScore">0</span><small>من 100</small></div></div></div>
+          <div><div style="font-size:12px;color:var(--muted)">التصنيف</div><div id="rCat" style="font-size:20px;font-weight:800"></div>
+            <div class="bars" id="rBars"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;--stripe:linear-gradient(90deg,var(--blue),transparent)"><h3>📉 السعر و EMA 20/50/200 (سنة)</h3><div class="chartbox"><canvas id="chart"></canvas></div></div>
+    <div class="tabs" id="rTabs"></div>
+    <div id="rBody" class="grid"></div>
+    <div id="rNews" style="margin-top:16px"></div>
+  </div>
+</section>
+
+<!-- OPPS -->
+<section id="s-opps" class="section">
+  <h2 class="title">🔎 الفرص الاستثمارية</h2><p>أسهم هبطت من قمتها وما زالت أساسياتها سليمة. البوابتان (شريعة + سهم حقيقي في XTB) تسبقان الرقم.</p>
+  <div id="oppsTools" style="margin-bottom:14px"></div>
+  <div class="grid g2" id="opps"></div>
+</section>
+
+<!-- MARKET -->
+<section id="s-market" class="section">
+  <h2 class="title">🌐 السوق الآن</h2><p>المؤشرات الرئيسية وحالة جلسة السوق الأمريكي بتوقيتك.</p>
+  <div class="grid g3" id="marketState"></div><div style="height:14px"></div><div class="grid g4" id="market"></div>
+</section>
+
+<!-- PORTFOLIO -->
+<section id="s-portfolio" class="section">
+  <h2 class="title">💼 محفظتي</h2><p>مراكزك اليدوية: القيمة، الربح والخسارة، التوزيع، المخاطرة والحكم الشرعي لكل مركز. لا يراها غيرك.</p>
+  <div class="card" style="--stripe:linear-gradient(90deg,var(--green),transparent)"><h3>إضافة مركز</h3>
+    <form class="form" id="pfForm"><label>الرمز<input class="in" name="symbol" required placeholder="AAPL"></label><label>العدد<input class="in" name="qty" type="number" step="any" min="0" required></label>
+    <label>متوسط الشراء<input class="in" name="avg_price" type="number" step="any" min="0" required></label><label>العملة<input class="in" name="currency" value="USD"></label><button class="btn">أضف</button></form></div>
+  <div style="height:14px"></div><div id="pf"></div>
+</section>
+
+<!-- WATCH -->
+<section id="s-watch" class="section">
+  <h2 class="title">👀 قائمة المتابعة</h2><p>كل سهم هنا يُراقب تلقائياً: هبوط حاد، خبر جوهري، تغير شرعي، قرب نتائج، انعكاس اتجاه.</p>
+  <div class="card"><form class="form" id="wlForm"><label>الرمز<input class="in" name="symbol" required placeholder="MSFT"></label><label>ملاحظة<input class="in" name="note" placeholder="اختياري"></label><button class="btn">أضف</button></form></div>
+  <div style="height:14px"></div><div id="wl" class="grid g2"></div>
+</section>
+
+<!-- ALERTS -->
+<section id="s-alerts" class="section">
+  <h2 class="title">🔔 التنبيهات</h2><p>قواعدك الخاصة + المراقبة التلقائية. تصل برسالة خاصة من البوت في Discord.</p>
+  <div class="card"><form class="form" id="alForm"><label>الرمز<input class="in" name="symbol" required placeholder="AAPL"></label>
+    <label>النوع<select class="in" name="kind"><option value="target">وصول سعر (target)</option><option value="below">كسر سعر (below)</option><option value="drop">هبوط % (drop)</option><option value="news">خبر جوهري</option><option value="sharia">تغير شرعي</option><option value="earnings">نتائج قادمة</option><option value="trend">انعكاس اتجاه</option></select></label>
+    <label>القيمة<input class="in" name="threshold" type="number" step="any" placeholder="عند الحاجة"></label><button class="btn">أضف</button></form></div>
+  <div style="height:14px"></div><div id="al"></div>
+</section>
+
+<!-- ASK -->
+<section id="s-ask" class="section">
+  <h2 class="title">🤖 اسأل Gemini</h2><p>يجيب من البيانات الحقيقية التي يجمعها المحرك فقط، ولا يضيف أرقاماً أو أخباراً من عنده.</p>
+  <div class="card ai-box"><form class="form" id="askForm" style="grid-template-columns:1fr 160px auto"><label>سؤالك<input class="in" id="askQ" required placeholder="هل سهم ASML مناسب للاستثمار طويل الأجل؟"></label><label>رمز السهم (اختياري)<input class="in" id="askSym" placeholder="ASML"></label><button class="btn">اسأل</button></form></div>
+  <div style="height:14px"></div><div id="askOut"></div>
+</section>
+
+<!-- HELP -->
+<section id="s-help" class="section">
+  <h2 class="title">❓ المساعدة</h2><p>ما فائدة المنصة وكيف تستخدمها.</p>
+  <div class="help-btns" id="helpBtns"></div><div id="helpOut"></div>
+</section>
+</main>
+
+<footer><div class="container">أبحاث آلية وليست نصيحة استثمارية · لا ربح مضمون · لا تنفيذ تلقائي · الأسعار متأخرة ~15 دقيقة<br><b>© Abdulrhman AL-Riyami</b> · tdawl.riyami.om</div></footer>
+
+<div id="loader"><div class="box"><div class="eq"><i></i><i></i><i></i><i></i><i></i></div><div id="loaderText">نجمع البيانات الحقيقية ونفحصها…</div></div></div>
+<div id="toasts"></div>
+<div class="overlay" id="loginOverlay"><div class="card" style="opacity:1;transform:none"><div class="logo" style="justify-content:center;margin-bottom:10px"><div class="mark">📈</div><div>تداول</div></div><div id="loginBody"></div></div></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const state={me:null,ticker:null,report:null,chart:null,pieChart:null};
+const fmt=(x,d=2)=>x==null?'—':Number(x).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const pct=(x,d=1)=>x==null?'—':(x>0?'+':'')+Number(x).toFixed(d)+'%';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function md(s){return esc(s).replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<span class="kbd">$1</span>');}
+const colorHex=c=>c==null?'#d4af37':'#'+Number(c).toString(16).padStart(6,'0');
+function toast(msg,type=''){const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),4500);}
+function loading(on,text){$('#loader').style.display=on?'grid':'none';if(text)$('#loaderText').textContent=text;}
+async function api(path,opt={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opt,body:opt.body?JSON.stringify(opt.body):undefined});
+  let data=null;try{data=await r.json()}catch(e){}
+  if(!r.ok){const m=(data&&(data.detail||data.message))||('خطأ '+r.status);if(r.status===401)needLogin();throw new Error(typeof m==='string'?m:JSON.stringify(m));}return data;}
+function show(s){$$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));$$('.section').forEach(x=>x.classList.toggle('active',x.id==='s-'+s));window.scrollTo({top:0,behavior:'smooth'});
+  ({opps:loadOpps,market:loadMarket,portfolio:loadPortfolio,watch:loadWatch,alerts:loadAlerts,help:loadHelp}[s]||(()=>{}))();}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.s)});
+
+/* ---- embed renderer ---- */
+function embedCard(e,extra=''){const c=colorHex(e.color);const fields=(e.fields||[]).map(f=>`<div class="field ${f.inline?'':'wide'}"><b>${md(f.name)}</b><div>${md(f.value)}</div></div>`).join('');
+  return `<div class="card ${extra}" style="--stripe:linear-gradient(90deg,${c},transparent)">${e.title?`<h3>${md(e.title)}</h3>`:''}${e.description?`<div class="desc">${md(e.description)}</div>`:''}${fields?`<div class="fields">${fields}</div>`:''}${e.footer?`<div class="foot">${md(e.footer.text)}</div>`:''}</div>`;}
+function countUp(el,to,d=2,dur=1200){const s=performance.now();const from=0;(function f(t){const p=Math.min(1,(t-s)/dur);const v=from+(to-from)*(1-Math.pow(1-p,3));el.textContent=fmt(v,d);if(p<1)requestAnimationFrame(f)})(s);}
+
+/* ---- auth ---- */
+async function loadMe(){state.me=await api('/api/me');const u=state.me.user;const box=$('#userbox');
+  if(u){box.innerHTML=`<div class="user">${u.avatar?`<img src="${u.avatar}" alt="">`:'👤'} <span>${esc(u.name)}</span>${u.admin?' <span style="color:var(--gold2)">· مشرف</span>':''} <button class="btn sm ghost" onclick="logout()">خروج</button></div>`;$('#loginOverlay').style.display='none';}
+  else if(state.me.auth==='discord'){box.innerHTML=`<a class="btn sm" href="/auth/login">دخول بـ Discord</a>`;needLogin();}
+  else if(state.me.auth==='code'){box.innerHTML=`<button class="btn sm" onclick="needLogin()">دخول</button>`;needLogin();}
+  else box.innerHTML=`<div class="user">👤 زائر</div>`;
+  const q=new URLSearchParams(location.search);if(q.get('login')==='notmember')toast('حسابك ليس عضواً في سيرفر Discord الخاص بالمنصة','err');if(q.get('login')==='failed')toast('فشل تسجيل الدخول، حاول مجدداً','err');}
+function needLogin(){if(!state.me||state.me.user)return;const o=$('#loginOverlay');o.style.display='grid';
+  if(state.me.auth==='discord')$('#loginBody').innerHTML=`<p style="color:var(--muted)">المنصة لأعضاء السيرفر. سجّل الدخول بحساب Discord نفسه لترى محفظتك وتنبيهاتك.</p><a class="btn" href="/auth/login">دخول بـ Discord</a>`;
+  else if(state.me.auth==='code')$('#loginBody').innerHTML=`<p style="color:var(--muted)">أدخل رمز الدخول</p><form onsubmit="codeLogin(event)" style="display:grid;gap:10px"><input class="in" id="codeIn" type="password" placeholder="رمز الدخول" autofocus><button class="btn">دخول</button></form>`;
+  else o.style.display='none';}
+async function codeLogin(e){e.preventDefault();try{await api('/auth/code',{method:'POST',body:{code:$('#codeIn').value}});await loadMe();toast('أهلاً بك','ok');boot();}catch(x){toast(x.message,'err')}}
+async function logout(){await api('/auth/logout',{method:'POST'});location.reload();}
+
+/* ---- home ---- */
+const QUICK=['AAPL','MSFT','NVDA','ASML','GOOGL','AMD','TSM','LLY','ADBE','2222.SR'];
+$('#chips').innerHTML=QUICK.map(s=>`<span class="chip" onclick="go('${s}')">${s}</span>`).join('');
+$('#searchForm').addEventListener('submit',e=>{e.preventDefault();go($('#sym').value)});
+function go(s){s=(s||'').trim().toUpperCase();if(!s)return;$('#sym').value=s;loadReport(s);}
+
+/* ---- report ---- */
+async function loadReport(t,force){try{loading(true,`نجمع بيانات ${t} الحقيقية ونفحصها شرعياً وفنياً…`);const d=await api(`/api/analyze/${encodeURIComponent(t)}`);state.ticker=t;state.report=d;renderReport(d);show('report');}
+  catch(e){toast(e.message,'err')}finally{loading(false)}}
+function badge(el,kind,text){el.className='badge '+kind;el.textContent=text;}
+function renderReport(d){const s=d.summary;$('#reportEmpty').style.display='none';const R=$('#report');R.style.display='block';
+  $('#rMeta').textContent=[s.ticker,s.exchange,s.sector,s.industry].filter(Boolean).join(' · ');$('#rName').textContent=s.name;
+  countUp($('#rPrice'),s.price||0);$('#rCur').textContent=s.currency;const ch=$('#rChg');ch.textContent=pct(s.change_pct);ch.className='chg '+(s.change_pct>=0?'up':'down');
+  badge($('#bSharia'),{HALAL:'ok',NON_COMPLIANT:'no',QUESTIONABLE:'warn'}[s.sharia]||'unk',s.sharia_label||'لم يُفحص');
+  badge($('#bXtb'),s.xtb==='REAL_STOCK'?'ok':s.xtb==='CFD_ONLY'?'no':'unk',s.xtb_label);
+  badge($('#bRisk'),{low:'ok',medium:'warn',high:'no','very high':'no'}[s.risk]||'unk','مخاطرة: '+({low:'منخفضة',medium:'متوسطة',high:'مرتفعة','very high':'مرتفعة جداً'}[s.risk]||'غير محددة'));
+  $('#rTrend').textContent=s.trend;
+  $('#rCat').textContent=s.category_ar+(s.investable?'':' (غير قابل للاستثمار حتى تُجتاز البوابتان)');$('#rCat').style.color=s.investable?'var(--gold2)':'var(--muted)';
+  setTimeout(()=>{$('#ringBar').style.strokeDashoffset=420-420*(s.score/100)},50);countUp($('#rScore'),s.score,0);
+  const parts={health:'الصحة',technical:'الفني',growth:'النمو',valuation:'التقييم',news:'الأخبار'};
+  $('#rBars').innerHTML=Object.entries(parts).map(([k,l])=>`<div class="bar"><span>${l}</span><i><b data-w="${(s.parts[k]||0)*5}"></b></i><span class="mono">${s.parts[k]??0}/20</span></div>`).join('');
+  setTimeout(()=>$$('#rBars b').forEach(b=>b.style.width=b.dataset.w+'%'),80);
+  drawChart(d.chart);
+  const names=['الملخص','الشريعة','الفني','الأساسي','الأخبار','المخاطر','الخلاصة'];
+  $('#rTabs').innerHTML=names.map((n,i)=>`<button ${i===6?'class="active"':''} onclick="rtab(${i},this)">${n}</button>`).join('');rtab(6);
+  $('#rNews').innerHTML=d.news.length?`<div class="card" style="--stripe:linear-gradient(90deg,var(--blue),transparent)"><h3>📰 آخر الأخبار (مع تاريخ النشر والمصدر)</h3><div class="news">${d.news.map(n=>`<a class="item" href="${esc(n.url)}" target="_blank" rel="noopener"><span class="dot" style="background:${n.sentiment==='positive'?'var(--green)':n.sentiment==='negative'?'var(--red)':'#888'}"></span>${esc(n.title)}<div class="meta">${esc(n.source)} · ${n.published_at?new Date(n.published_at*1000).toLocaleDateString('ar-OM'):'تاريخ غير معروف'} · ${esc(n.event_ar)} · ${esc(n.impact)}</div></a>`).join('')}</div>${d.filings.length?`<div class="foot">إفصاحات SEC: ${d.filings.slice(0,5).map(f=>`<a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.form)} ${esc(f.filed_at)}</a>`).join(' · ')}</div>`:''}</div>`:'';}
+function rtab(i,btn){if(btn)$$('#rTabs button').forEach(b=>b.classList.toggle('active',b===btn));$('#rBody').innerHTML=embedCard(state.report.embeds[i]);}
+function drawChart(c){if(typeof Chart==='undefined'){return}if(state.chart)state.chart.destroy();if(!c||!c.close||!c.close.length){return}
+  const ds=[{label:'الإغلاق',data:c.close,borderColor:'#f3d77a',borderWidth:2,pointRadius:0,tension:.25,fill:{target:'origin',above:'rgba(212,175,55,.08)'}}];
+  [['ema20','#5aa9ff'],['ema50','#b08cff'],['ema200','#ff5c7a']].forEach(([k,col])=>{if(c[k])ds.push({label:k.toUpperCase(),data:c[k],borderColor:col,borderWidth:1.3,pointRadius:0,tension:.25,borderDash:k==='ema200'?[6,4]:[]})});
+  state.chart=new Chart($('#chart'),{type:'line',data:{labels:c.dates,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:{duration:1400,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:'#9aa5c4',boxWidth:12,font:{family:'Tajawal'}},rtl:true},tooltip:{rtl:true,callbacks:{label:x=>` ${x.dataset.label}: ${fmt(x.parsed.y)}`}}},
+    scales:{x:{ticks:{color:'#9aa5c4',maxTicksLimit:8},grid:{color:'rgba(255,255,255,.05)'}},y:{position:'right',ticks:{color:'#9aa5c4'},grid:{color:'rgba(255,255,255,.05)'}}}}});}
+
+/* ---- sharia ---- */
+async function loadSharia(t,method){try{loading(true,'نفحص السهم شرعياً بالمنهجية المختارة…');const d=await api(`/api/sharia/${encodeURIComponent(t)}${method?'?method='+method:''}`);
+  const v=d.verdict;const other=Object.keys(d.methods).filter(m=>m!==v.method).map(m=>`<button class="btn sm ghost" onclick="loadSharia('${t}','${m}')">أعد الفحص بـ ${m}</button>`).join(' ');
+  $('#rBody').innerHTML=embedCard(d.embeds[0])+`<div class="card"><h3>المنهجيات المتاحة</h3><div class="desc">${Object.values(d.methods).map(m=>'• '+esc(m.note)).join('\n')}</div><div class="tabs">${other}</div></div>`;
+  $$('#rTabs button').forEach((b,i)=>b.classList.toggle('active',i===1));show('report');}catch(e){toast(e.message,'err')}finally{loading(false)}}
+
+/* ---- market ---- */
+let mkTimer=null;
+async function loadMarket(target){try{const d=await api('/api/market');const names={SP500:'S&P 500',NASDAQ:'Nasdaq',DOW:'Dow Jones',VIX:'VIX',US10Y:'عائد 10 سنوات',OIL:'النفط',GOLD:'الذهب',BTC:'بيتكوين'};
+  const tiles=Object.entries(names).filter(([k])=>d.indices[k+'_last']!=null).map(([k,n])=>{const ch=d.indices[k+'_chg_pct'];return `<div class="card tile" style="--stripe:${ch>=0?'var(--green)':'var(--red)'}"><div class="k">${n}</div><div class="v mono">${fmt(d.indices[k+'_last'])}</div><span class="chg ${ch>=0?'up':'down'}">${pct(ch)}</span></div>`}).join('')||'<div class="empty">لا بيانات مؤشرات الآن</div>';
+  $('#market').innerHTML=tiles;$('#homeMarket').innerHTML=tiles.split('</div><div class="card').slice(0,3).join('</div><div class="card');
+  const stateCard=`<div class="card" style="--stripe:${d.state==='open'?'var(--green)':'var(--gold)'}"><h3>${d.state==='open'?'🟢':d.state==='pre'?'🟡':'🔵'} ${esc(d.state_ar)}</h3><div class="desc">${d.state==='open'?'الإغلاق':'الافتتاح القادم'}: ${new Date((d.state==='open'?d.next_close:d.next_open)*1000).toLocaleString('ar-OM',{weekday:'long',hour:'2-digit',minute:'2-digit'})} بتوقيت ${esc(d.tz)}</div><div class="countdown mono" id="cd"></div></div>`;
+  $('#marketState').innerHTML=stateCard;const tgt=(d.state==='open'?d.next_close:d.next_open)*1000;clearInterval(mkTimer);
+  const tick=()=>{const el=$('#cd');if(!el)return;let s=Math.max(0,Math.floor((tgt-Date.now())/1000));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}`};tick();mkTimer=setInterval(tick,1000);
+ }catch(e){if(target!=='silent')toast(e.message,'err')}}
+
+/* ---- opportunities ---- */
+function oppCard(x){const inv=x.sharia==='HALAL'&&x.xtb==='REAL_STOCK';return `<div class="card" style="--stripe:${inv?'var(--green)':'var(--muted)'}"><div class="opp"><div class="score-pill">${x.score}</div><div><div style="font-weight:800;font-size:18px">${esc(x.ticker)} <span style="color:var(--muted);font-weight:500;font-size:13px">${esc(x.name||'')}</span></div><div style="font-size:13px;color:var(--muted)">${esc(x.category)} · ${x.drop_pct!=null?pct(x.drop_pct)+' من القمة':''} · ${x.price!=null?fmt(x.price)+' '+esc(x.currency||''):''}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${x.sharia==='HALAL'?'ok':x.sharia==='NON_COMPLIANT'?'no':'warn'}">${esc(x.sharia||'?')}</span><span class="badge ${x.xtb==='REAL_STOCK'?'ok':'unk'}">XTB ${esc(x.xtb||'?')}</span></div></div><button class="btn sm ghost" onclick="go('${esc(x.ticker)}')">تحليل</button></div></div>`;}
+async function loadOpps(){try{const d=await api('/api/opportunities');const admin=state.me&&state.me.user&&state.me.user.admin;
+  $('#oppsTools').innerHTML=`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="color:var(--muted);font-size:13px">${d.created_at?'آخر مسح: '+new Date(d.created_at*1000).toLocaleString('ar-OM')+' · '+d.universe_size+' سهم':'لا يوجد مسح محفوظ بعد'}</span>${admin?'<button class="btn sm" onclick="runScan()">تشغيل مسح جديد (دقائق)</button>':''}</div>`;
+  $('#opps').innerHTML=d.results.length?d.results.map(oppCard).join(''):'<div class="empty">لا نتائج بعد. المشرف يشغّل المسح من هنا أو بأمر /scan في Discord.</div>';
+  $('#homeOpps').innerHTML=d.results.slice(0,4).map(oppCard).join('');}catch(e){toast(e.message,'err')}}
+async function runScan(){try{loading(true,'نمسح القائمة كاملة… قد يأخذ عدة دقائق');await api('/api/scan?min_drop=15&limit_=10',{method:'POST'});toast('اكتمل المسح','ok');loadOpps();}catch(e){toast(e.message,'err')}finally{loading(false)}}
+
+/* ---- portfolio ---- */
+async function loadPortfolio(){const box=$('#pf');box.innerHTML='<div class="card"><div class="skel"></div><div class="skel" style="width:60%"></div></div>';try{const d=await api('/api/portfolio');
+  if(!d.positions.length){box.innerHTML='<div class="empty">لا مراكز بعد. أضف أول مركز من النموذج أعلاه.</div>';return}
+  const rows=d.positions.map(p=>`<tr><td><b>${esc(p.ticker)}</b> ${({HALAL:'✅',NON_COMPLIANT:'⛔',QUESTIONABLE:'⚠️'}[p.sharia]||'❓')}</td><td class="mono">${p.qty}</td><td class="mono">${fmt(p.avg_price)}</td><td class="mono">${fmt(p.price)}</td><td class="mono">${fmt(p.value)}</td><td class="mono ${p.pnl>=0?'up':'down'}" style="background:none">${fmt(p.pnl)} (${pct(p.pnl_pct)})</td><td class="mono">${p.weight!=null?(p.weight*100).toFixed(0)+'%':'—'}</td><td><button class="btn sm ghost" onclick="go('${esc(p.ticker)}')">تحليل</button> <button class="btn sm danger" onclick="pfRemove('${esc(p.ticker)}')">حذف</button></td></tr>`).join('');
+  box.innerHTML=`<div class="grid g3"><div class="card tile"><div class="k">القيمة الإجمالية</div><div class="v mono" id="pfV">0</div></div><div class="card tile"><div class="k">التكلفة</div><div class="v mono">${fmt(d.total_cost)}</div></div><div class="card tile" style="--stripe:${d.total_pnl>=0?'var(--green)':'var(--red)'}"><div class="k">الربح / الخسارة</div><div class="v mono ${d.total_pnl>=0?'up':'down'}" style="background:none">${fmt(d.total_pnl)} (${pct(d.total_pnl_pct,2)})</div></div></div>
+  <div style="height:14px"></div><div class="grid g2"><div class="card" style="grid-column:1/-1;overflow:auto"><h3>المراكز</h3><table><thead><tr><th>السهم</th><th>العدد</th><th>متوسط</th><th>السعر</th><th>القيمة</th><th>ربح/خسارة</th><th>الوزن</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="card"><h3>التوزيع القطاعي</h3><div style="height:240px"><canvas id="pie"></canvas></div></div><div class="card" style="--stripe:var(--orange)"><h3>المخاطرة: ${({low:'منخفضة',medium:'متوسطة',high:'مرتفعة'}[d.risk_level]||d.risk_level)}</h3><div class="desc">${d.risk_notes.map(n=>'• '+esc(n)).join('\n')||'لا ملاحظات'}</div></div></div>`;
+  countUp($('#pfV'),d.total_value);if(state.pieChart)state.pieChart.destroy();const al=Object.entries(d.allocation);
+  if(typeof Chart!=='undefined')state.pieChart=new Chart($('#pie'),{type:'doughnut',data:{labels:al.map(x=>x[0]),datasets:[{data:al.map(x=>+(x[1]*100).toFixed(1)),backgroundColor:['#d4af37','#5aa9ff','#b08cff','#2ecc8f','#ff5c7a','#ffb347','#8fd3ff','#c9c9c9'],borderWidth:0}]},options:{animation:{animateRotate:true,duration:1200},plugins:{legend:{position:'bottom',labels:{color:'#9aa5c4',font:{family:'Tajawal'}},rtl:true}},cutout:'62%'}});
+ }catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
+$('#pfForm').addEventListener('submit',async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await api('/api/portfolio',{method:'POST',body:{symbol:f.symbol,qty:+f.qty,avg_price:+f.avg_price,currency:f.currency||'USD'}});toast('أُضيف المركز','ok');e.target.reset();loadPortfolio();}catch(x){toast(x.message,'err')}});
+async function pfRemove(t){if(!confirm('حذف '+t+' من المحفظة؟'))return;await api('/api/portfolio/'+t,{method:'DELETE'});loadPortfolio();}
+
+/* ---- watchlist ---- */
+async function loadWatch(){const box=$('#wl');box.innerHTML='<div class="card"><div class="skel"></div><div class="skel" style="width:50%"></div></div>';try{const d=await api('/api/watchlist');
+  box.innerHTML=d.items.length?d.items.map(x=>x.error?`<div class="card"><b>${esc(x.ticker)}</b> — ${esc(x.error)}</div>`:`<div class="card" style="--stripe:${x.investable?'var(--green)':'var(--muted)'}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-weight:800;font-size:18px">${esc(x.ticker)} <span style="color:var(--muted);font-size:13px;font-weight:500">${esc(x.name)}</span></div><div class="mono" style="font-size:20px">${fmt(x.price)} ${esc(x.currency)} <span class="chg ${x.change_pct>=0?'up':'down'}">${pct(x.change_pct)}</span></div><div style="font-size:12px;color:var(--muted)">${esc(x.trend)}${x.note?' · '+esc(x.note):''}</div><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><span class="badge ${x.sharia==='HALAL'?'ok':x.sharia==='NON_COMPLIANT'?'no':'warn'}">${esc(x.sharia)}</span><span class="badge ${x.xtb==='REAL_STOCK'?'ok':'unk'}">XTB ${esc(x.xtb)}</span><span class="badge">${x.score}/100</span></div></div><div style="display:grid;gap:6px"><button class="btn sm ghost" onclick="go('${esc(x.ticker)}')">تحليل</button><button class="btn sm danger" onclick="wlRemove('${esc(x.ticker)}')">إزالة</button></div></div></div>`).join(''):'<div class="empty">القائمة فارغة.</div>';}
+ catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
+$('#wlForm').addEventListener('submit',async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await api('/api/watchlist',{method:'POST',body:{symbol:f.symbol,note:f.note}});toast('تمت الإضافة للمتابعة','ok');e.target.reset();loadWatch();}catch(x){toast(x.message,'err')}});
+async function addWatch(t){try{await api('/api/watchlist',{method:'POST',body:{symbol:t,note:''}});toast(t+' تحت المتابعة','ok')}catch(x){toast(x.message,'err')}}
+async function wlRemove(t){await api('/api/watchlist/'+t,{method:'DELETE'});loadWatch();}
+
+/* ---- alerts ---- */
+const KIND={target:'وصول سعر',below:'كسر سعر',drop:'هبوط %',news:'خبر جوهري',sharia:'تغير شرعي',earnings:'نتائج',trend:'انعكاس اتجاه'};
+async function loadAlerts(){const box=$('#al');try{const d=await api('/api/alerts');
+  box.innerHTML=`<div class="grid g2"><div class="card"><h3>قواعدك</h3>${d.rules.length?`<table><tbody>${d.rules.map(r=>`<tr><td><b>${esc(r.ticker)}</b></td><td>${KIND[r.kind]||r.kind}</td><td class="mono">${r.threshold??''}</td><td><button class="btn sm danger" onclick="alRemove(${r.id})">حذف</button></td></tr>`).join('')}</tbody></table>`:'<div class="desc">لا قواعد بعد</div>'}</div>
+  <div class="card" style="--stripe:var(--blue)"><h3>مراقبة تلقائية</h3><div class="desc">هبوط ≥ ${d.drop_pct}% · خبر جوهري · تغير شرعي · نتائج خلال 3 أيام · انعكاس اتجاه\n\n${d.auto.length?d.auto.map(t=>`<span class="chip" onclick="go('${t}')">${t}</span>`).join(' '):'أضف أسهماً للمحفظة أو المتابعة لتُراقب تلقائياً'}</div></div>
+  <div class="card" style="grid-column:1/-1"><h3>آخر التنبيهات المرسلة</h3>${d.log.length?`<div class="news">${d.log.map(l=>`<div class="item" style="display:block;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:12px;padding:10px 12px">${esc(l.message)}<div class="meta">${new Date(l.fired_at*1000).toLocaleString('ar-OM')}</div></div>`).join('')}</div>`:'<div class="desc">لم يُرسل أي تنبيه بعد</div>'}</div></div>`;}
+ catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`}}
+$('#alForm').addEventListener('submit',async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));try{await api('/api/alerts',{method:'POST',body:{symbol:f.symbol,kind:f.kind,threshold:f.threshold?+f.threshold:null}});toast('أُضيف التنبيه','ok');e.target.reset();loadAlerts();}catch(x){toast(x.message,'err')}});
+async function alRemove(id){await api('/api/alerts/'+id,{method:'DELETE'});loadAlerts();}
+
+/* ---- ask ---- */
+$('#askForm').addEventListener('submit',async e=>{e.preventDefault();const q=$('#askQ').value.trim(),s=$('#askSym').value.trim().toUpperCase();if(!q)return;
+  $('#askOut').innerHTML='<div class="card ai-box"><div class="skel"></div><div class="skel" style="width:80%"></div><div class="skel" style="width:60%"></div></div>';
+  try{const d=await api('/api/ask',{method:'POST',body:{question:q,symbol:s||null}});
+    $('#askOut').innerHTML=`<div class="card ai-box"><h3>🤖 الإجابة</h3><div class="desc" style="color:var(--text);font-size:15px">${md(d.answer)}</div>${d.data_used&&d.data_used.length?`<div class="fields"><div class="field wide"><b>البيانات المستخدمة</b><div>${d.data_used.map(x=>'• '+esc(x)).join('\n')}</div></div></div>`:''}${d.caveats&&d.caveats.length?`<div class="foot">${d.caveats.map(x=>'• '+esc(x)).join('<br>')}</div>`:''}</div>`;}
+  catch(x){$('#askOut').innerHTML=`<div class="empty">${esc(x.message)}</div>`}});
+
+/* ---- help ---- */
+let helpData=null;
+async function loadHelp(){if(!helpData)helpData=await api('/api/help');$('#helpBtns').innerHTML=helpData.sections.map((s,i)=>`<button class="btn sm ${i?'ghost':''}" onclick="helpTab(${i},this)">${esc(s.label)}</button>`).join('');helpTab(0);}
+function helpTab(i,btn){if(btn)$$('#helpBtns button').forEach(b=>b.classList.toggle('ghost',b!==btn));$('#helpOut').innerHTML=embedCard(helpData.sections[i].embed);}
+
+/* ---- boot ---- */
+async function boot(){if(state.me&&!state.me.user&&state.me.auth!=='open')return;loadMarket('silent');loadOpps();const h=location.hash.replace('#','');if(h&&/^[A-Z0-9.\-^=]{1,12}$/i.test(h))go(h);}
+loadMe().then(boot).catch(e=>toast(e.message,'err'));
+</script>
+</body>
+</html>

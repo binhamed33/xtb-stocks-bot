@@ -1,0 +1,23 @@
+[Unit]
+Description=XTB stocks research web dashboard (tdawl.riyami.om)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=stocksbot
+WorkingDirectory=/opt/xtb-stocks-bot
+Environment=PYTHONWARNINGS=ignore
+ExecStart=/opt/xtb-stocks-bot/.venv/bin/python -m stockbot web
+Restart=always
+RestartSec=10
+KillSignal=SIGTERM
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xtb-stocks-bot/state /opt/xtb-stocks-bot/bot.log
+
+[Install]
+WantedBy=multi-user.target
