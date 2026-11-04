@@ -44,7 +44,11 @@ def test_code_login_and_personal_features(settings, db, monkeypatch):
     s2 = dataclasses.replace(settings, web_auth="code", web_access_code="secret-123", web_public_url="http://testserver")
     eng, hub = make_engine(s2, db)
     c = TestClient(create_app(s2, eng), raise_server_exceptions=True)
-    assert c.get("/api/portfolio").status_code == 401
+    assert c.get("/api/analyze/AAPL").status_code == 200          # guests may research
+    assert c.get("/api/portfolio").status_code == 401             # personal features need a login
+    s3 = dataclasses.replace(s2, web_require_login=True)
+    c3 = TestClient(create_app(s3, make_engine(s3, db)[0]), raise_server_exceptions=True)
+    assert c3.get("/api/analyze/AAPL").status_code == 401         # unless the owner requires login
     assert c.post("/auth/code", json={"code": "wrong"}).status_code == 401
     assert c.post("/auth/code", json={"code": "secret-123"}).json()["ok"] is True
     assert c.get("/api/me").json()["user"]["name"] == "عضو"

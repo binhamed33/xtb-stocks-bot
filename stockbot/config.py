@@ -152,6 +152,7 @@ class Settings:
     discord_client_id: str | None
     discord_client_secret: str | None
     web_rate_per_minute: int
+    web_require_login: bool          # false: visitors may research without logging in
 
     @property
     def state_file(self) -> Path:
@@ -257,4 +258,5 @@ def load_settings() -> Settings:
         discord_client_id=_env("DISCORD_CLIENT_ID"),
         discord_client_secret=_env("DISCORD_CLIENT_SECRET"),
         web_rate_per_minute=max(5, _int("WEB_RATE_PER_MINUTE", 30)),
+        web_require_login=_bool("WEB_REQUIRE_LOGIN", False),
     )

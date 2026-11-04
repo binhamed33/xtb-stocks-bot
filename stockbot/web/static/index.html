@@ -263,7 +263,7 @@ function loading(on,text){$('#loader').style.display=on?'grid':'none';if(text)$(
 async function api(path,opt={}){const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opt,body:opt.body?JSON.stringify(opt.body):undefined});
   let data=null;try{data=await r.json()}catch(e){}
   if(!r.ok){const m=(data&&(data.detail||data.message))||('خطأ '+r.status);if(r.status===401)needLogin();throw new Error(typeof m==='string'?m:JSON.stringify(m));}return data;}
-function show(s){$$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));$$('.section').forEach(x=>x.classList.toggle('active',x.id==='s-'+s));window.scrollTo({top:0,behavior:'smooth'});
+function show(s){if(['portfolio','watch','alerts'].includes(s)&&state.me&&!state.me.user&&state.me.auth!=='open'){needLogin(true);}$$('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===s));$$('.section').forEach(x=>x.classList.toggle('active',x.id==='s-'+s));window.scrollTo({top:0,behavior:'smooth'});
   ({opps:loadOpps,market:loadMarket,portfolio:loadPortfolio,watch:loadWatch,alerts:loadAlerts,help:loadHelp}[s]||(()=>{}))();}
 $('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.s)});
 
@@ -275,13 +275,14 @@ function countUp(el,to,d=2,dur=1200){const s=performance.now();const from=0;(fun
 /* ---- auth ---- */
 async function loadMe(){state.me=await api('/api/me');const u=state.me.user;const box=$('#userbox');
   if(u){box.innerHTML=`<div class="user">${u.avatar?`<img src="${u.avatar}" alt="">`:'👤'} <span>${esc(u.name)}</span>${u.admin?' <span style="color:var(--gold2)">· مشرف</span>':''} <button class="btn sm ghost" onclick="logout()">خروج</button></div>`;$('#loginOverlay').style.display='none';}
-  else if(state.me.auth==='discord'){box.innerHTML=`<a class="btn sm" href="/auth/login">دخول بـ Discord</a>`;needLogin();}
-  else if(state.me.auth==='code'){box.innerHTML=`<button class="btn sm" onclick="needLogin()">دخول</button>`;needLogin();}
+  else if(state.me.auth==='discord'){box.innerHTML=`<div class="user">👤 زائر <a class="btn sm" href="/auth/login" title="اربط حسابك لتفعيل المحفظة والمتابعة والتنبيهات">ربط Discord</a></div>`;if(state.me.require_login)needLogin();}
+  else if(state.me.auth==='code'){box.innerHTML=`<div class="user">👤 زائر <button class="btn sm" onclick="needLogin(true)">دخول</button></div>`;if(state.me.require_login)needLogin();}
   else box.innerHTML=`<div class="user">👤 زائر</div>`;
   const q=new URLSearchParams(location.search);if(q.get('login')==='notmember')toast('حسابك ليس عضواً في سيرفر Discord الخاص بالمنصة','err');if(q.get('login')==='failed')toast('فشل تسجيل الدخول، حاول مجدداً','err');}
-function needLogin(){if(!state.me||state.me.user)return;const o=$('#loginOverlay');o.style.display='grid';
-  if(state.me.auth==='discord')$('#loginBody').innerHTML=`<p style="color:var(--muted)">المنصة لأعضاء السيرفر. سجّل الدخول بحساب Discord نفسه لترى محفظتك وتنبيهاتك.</p><a class="btn" href="/auth/login">دخول بـ Discord</a>`;
-  else if(state.me.auth==='code')$('#loginBody').innerHTML=`<p style="color:var(--muted)">أدخل رمز الدخول</p><form onsubmit="codeLogin(event)" style="display:grid;gap:10px"><input class="in" id="codeIn" type="password" placeholder="رمز الدخول" autofocus><button class="btn">دخول</button></form>`;
+function needLogin(force){if(!state.me||state.me.user)return;const o=$('#loginOverlay');o.style.display='grid';
+  const guest=state.me.require_login?'':`<div style="margin-top:12px"><button class="btn sm ghost" onclick="$('#loginOverlay').style.display='none'">متابعة كزائر</button><div style="font-size:12px;color:var(--muted);margin-top:8px">الزائر يستطيع البحث والتحليل والفرص والسوق. الربط يفعّل المحفظة والمتابعة والتنبيهات.</div></div>`;
+  if(state.me.auth==='discord')$('#loginBody').innerHTML=`<p style="color:var(--muted)">اربط حسابك في Discord لترى محفظتك وقائمة متابعتك وتنبيهاتك نفسها التي أنشأتها في السيرفر.</p><a class="btn" href="/auth/login">ربط حساب Discord</a>${guest}`;
+  else if(state.me.auth==='code')$('#loginBody').innerHTML=`<p style="color:var(--muted)">أدخل رمز الدخول</p><form onsubmit="codeLogin(event)" style="display:grid;gap:10px"><input class="in" id="codeIn" type="password" placeholder="رمز الدخول" autofocus><button class="btn">دخول</button></form>${guest}`;
   else o.style.display='none';}
 async function codeLogin(e){e.preventDefault();try{await api('/auth/code',{method:'POST',body:{code:$('#codeIn').value}});await loadMe();toast('أهلاً بك','ok');boot();}catch(x){toast(x.message,'err')}}
 async function logout(){await api('/auth/logout',{method:'POST'});location.reload();}
@@ -388,7 +389,7 @@ async function loadHelp(){if(!helpData)helpData=await api('/api/help');$('#helpB
 function helpTab(i,btn){if(btn)$$('#helpBtns button').forEach(b=>b.classList.toggle('ghost',b!==btn));$('#helpOut').innerHTML=embedCard(helpData.sections[i].embed);}
 
 /* ---- boot ---- */
-async function boot(){if(state.me&&!state.me.user&&state.me.auth!=='open')return;loadMarket('silent');loadOpps();const h=location.hash.replace('#','');if(h&&/^[A-Z0-9.\-^=]{1,12}$/i.test(h))go(h);}
+async function boot(){if(state.me&&!state.me.user&&state.me.require_login)return;loadMarket('silent');loadOpps();const h=location.hash.replace('#','');if(h&&/^[A-Z0-9.\-^=]{1,12}$/i.test(h))go(h);}
 loadMe().then(boot).catch(e=>toast(e.message,'err'));
 </script>
 </body>

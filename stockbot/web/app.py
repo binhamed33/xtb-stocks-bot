@@ -6,7 +6,10 @@ Discord sees the portfolio / watchlist / alerts they created in the chat.
 Auth modes (WEB_AUTH):
   discord  OAuth2 login with the Discord application; membership of DISCORD_GUILD_ID required when set
   code     a shared access code (WEB_ACCESS_CODE); one shared "guest" account for personal features
-  open     no login (research only; personal features disabled)
+  open     no login possible (research only)
+
+Visitors can always research anonymously unless WEB_REQUIRE_LOGIN=true; logging in
+(linking Discord) unlocks the personal features: portfolio, watchlist, alerts.
 
 Secrets never reach the browser: tokens are exchanged server-side and the
 session is a signed, HttpOnly cookie holding only id / name / avatar / admin.
@@ -182,9 +185,9 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
         s = session_of(request)
         if s:
             return s
-        if settings.web_auth == "open":
-            return {"id": 0, "name": "زائر", "avatar": None, "admin": False, "anon": True}
-        raise HTTPException(401, "سجّل الدخول أولاً")
+        if settings.web_require_login:
+            raise HTTPException(401, "سجّل الدخول أولاً")
+        return {"id": 0, "name": "زائر", "avatar": None, "admin": False, "anon": True}
 
     def personal_user(request: Request) -> dict[str, Any]:
         u = current_user(request)
@@ -206,7 +209,7 @@ def create_app(settings: Settings, engine: Engine) -> FastAPI:
     @app.get("/api/me")
     def me(request: Request) -> dict[str, Any]:
         s = session_of(request)
-        return {"auth": settings.web_auth, "user": s, "guild": settings.discord_guild_id,
+        return {"auth": settings.web_auth, "user": s, "guild": settings.discord_guild_id, "require_login": settings.web_require_login,
                 "ai": settings.gemini_enabled, "sharia_method": settings.sharia_method,
                 "login_url": "/auth/login" if settings.web_auth == "discord" else None}
 
