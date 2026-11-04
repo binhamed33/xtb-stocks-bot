@@ -83,7 +83,7 @@ XTB أوقفت واجهتها البرمجية في مارس 2025 ولا تنش�
 sudo DOMAIN=tdawl.riyami.om EMAIL=you@example.com bash /opt/xtb-stocks-bot/deploy/install-web.sh
 ```
 
-يثبّت Nginx وخدمة `xtb-stocks-web` وشهادة Let's Encrypt. تسجيل الدخول بـ Discord يحتاج `DISCORD_CLIENT_ID` و`DISCORD_CLIENT_SECRET` من Developer Portal مع إضافة Redirect `https://tdawl.riyami.om/auth/callback`.
+يثبّت Nginx وخدمة `xtb-stocks-web` وشهادة Let's Encrypt (certonly: لا يلمس أي موقع آخر على السيرفر). تسجيل الدخول بـ Discord يحتاج `DISCORD_CLIENT_ID` و`DISCORD_CLIENT_SECRET` من Developer Portal مع إضافة Redirect `https://tdawl.riyami.om/auth/callback`.
 
 ## التثبيت على السيرفر
 
